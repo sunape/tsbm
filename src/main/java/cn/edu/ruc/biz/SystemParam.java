@@ -103,7 +103,6 @@ public class SystemParam {
 		return IS_INIT;
 	}
 	public static void initParam() {
-		System.setProperty("config_path", "/Users/fasape/eclipse-workspace/tsbm/conf/config.properties");
 		String configPath = System.getProperty("config_path");
 		Properties prop=new Properties();
 		try {
