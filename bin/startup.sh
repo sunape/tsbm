@@ -6,8 +6,8 @@ fi
 
 echo $BENCHMARK_HOME
 
-#MAIN_CLASS=cn.edu.ruc.biz.Core
-MAIN_CLASS=cn.edu.ruc.Test
+MAIN_CLASS=cn.edu.ruc.biz.Core
+#MAIN_CLASS=cn.edu.ruc.Test
 
 CLASSPATH=""
 for f in ${BENCHMARK_HOME}/lib/*.jar; do
