@@ -1,11 +1,5 @@
 package cn.edu.ruc.biz;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +10,6 @@ import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,13 +31,13 @@ public class StressAppend {
 	/**传感器编号*/
 	private static final List<String> SENSOR_CODES=Constants.SENSOR_CODES; 
 	private static final Map<String,Long> SHIFT_TIME_MAP=Constants.SHIFT_TIME_MAP; 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		THREAD_NUMBER=SystemParam.APPEND_CLIENTS;
 		initSensorCodes(SystemParam.APPEND_SENSOR_NUM);
 		initSensorFunction();
 		startStressAppend();
 	}
-	public static void startStressAppend(){
+	public static void startStressAppend() throws Exception{
 		//1,生成dn个 设备(每个设备500个传感器)的7min的数据
 		//dn=threads*k k>0;
 		int seq=SystemParam.APPEND_MIN_DEV_NUM;
@@ -54,12 +47,15 @@ public class StressAppend {
 			long sumAllPoints=0;
 			long sumAllTimeout=0;
 			long sumTimeLoad=0;
+			int cacheSize=SystemParam.APPEND_CACHE_NUM;
+			int maxLoop=SystemParam.APPEND_LOOP;
 			long virtualEndTime=System.currentTimeMillis();
-			long virtualTime=virtualEndTime-SystemParam.APPEND_STEP*60;//FIXME 默认导入60次
+			long virtualTime=virtualEndTime-SystemParam.APPEND_STEP*maxLoop*cacheSize;//
 			ExecutorService pool = Executors.newFixedThreadPool(THREAD_NUMBER);
 			CompletionService<Status> cs = new ExecutorCompletionService<Status>(pool);
-			while(virtualTime<=virtualEndTime){
-				LinkedList<List<TsPoint>> linkedTsPoints= generateAppendData(seq,THREAD_NUMBER,virtualTime);
+			int currentLoop=0;
+			while(currentLoop<maxLoop){
+				LinkedList<List<TsPoint>> linkedTsPoints= generateAppendData(seq,THREAD_NUMBER,virtualTime,cacheSize);
 				//开辟线程写入数据
 				long sumTimeout=0L;
 				long sumPoints=0L;
@@ -70,32 +66,30 @@ public class StressAppend {
 					cs.submit(new Callable<Status>() {
 						@Override
 						public Status call() throws Exception {
-							return dbBase.insertMulti(points);
+							Status status = dbBase.insertMulti(points);
+							return status;
 						}
 					});
 				}
-				try {
-					for(int index=0;index<THREAD_NUMBER;index++) {
-						Status status = cs.take().get();
-						if(status.isOK()) {
-							sumTimeout+=status.getCostTime();
-							sumPoints+=status.getPointNum();
-						}
+				for(int index=0;index<THREAD_NUMBER;index++) {
+					Status status = cs.take().get();
+					if(status.isOK()) {
+						sumTimeout+=status.getCostTime();
+						sumPoints+=status.getPointNum();
 					}
-					long endTimeLoad=System.nanoTime();
-					long costTime=endTimeLoad-startTimeLoad;
-					int pointsRatio=(int)(sumPoints/(costTime/Math.pow(1000.0, 3)));
-					int timeout=(int) (sumTimeout/(double)sumPoints);//每个点的延迟时间，单位是us
-					LOGGER.info("order[{}/{}],import[{}]points,cost [{} s],speed [{} points/s],timeout[{} us/kpoints]"
-							,60-(virtualEndTime-virtualTime)/SystemParam.APPEND_STEP,60,sumPoints,costTime/Math.pow(10, 9),pointsRatio,timeout);
-					sumTimeLoad+=costTime;
-					sumAllPoints+=sumPoints;
-					sumAllTimeout+=sumTimeout;
-					virtualTime+=SystemParam.APPEND_STEP;
-					Thread.sleep(300L);
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
+				long endTimeLoad=System.nanoTime();
+				long costTime=endTimeLoad-startTimeLoad;
+				int pps=(int)(sumPoints/(costTime/Math.pow(10, 9)));
+				int timeout=(int) (sumTimeout/(double)sumPoints);//每个点的延迟时间，单位是us
+				LOGGER.info("order[{}/{}],import[{}]points,cost [{} s],speed [{} points/s],timeout[{} us/kpoints]"
+						,currentLoop+1,maxLoop,sumPoints,costTime/Math.pow(10, 9),pps,timeout);
+				sumTimeLoad+=costTime;
+				sumAllPoints+=sumPoints;
+				sumAllTimeout+=sumTimeout;
+				virtualTime+=SystemParam.APPEND_STEP*cacheSize;
+				currentLoop++;
+				Thread.sleep(300L);
 			}
 			LOGGER.info("device number="+seq*THREAD_NUMBER+",avg load speed "+(long)(sumAllPoints/(sumTimeLoad/Math.pow(10,9)))+" points/s,avg timeout ["+sumAllTimeout/sumAllPoints+" us/kpoints]");
 			seq+=SystemParam.APPEND_INTERVAL_DEV_NUM;
@@ -110,7 +104,7 @@ public class StressAppend {
 	 * @param virtualTime
 	 * @return
 	 */
-	private static LinkedList<List<TsPoint>> generateAppendData(int seq, int threadNums, long virtualTime) {
+	private static LinkedList<List<TsPoint>> generateAppendData(int seq, int threadNums, long virtualTime,int cacheSize) {
 		int dn=threadNums*seq;
 		int sn=SystemParam.APPEND_SENSOR_NUM;
 		double loseRatio=SystemParam.APPEND_LOSE_RATIO;
@@ -122,21 +116,26 @@ public class StressAppend {
 			String deviceCode=DEVICE_CODES.get(dnIndex);
 			List<TsPoint> points=null;
 			if(linkedPoints.size()<threadNums) {
-				points=new ArrayList<TsPoint>();
+				points=new LinkedList<TsPoint>();
 			}else {
 				points=linkedPoints.removeFirst();
 			}
-			for(int sensorNum=0;sensorNum<sn;sensorNum++){//500为sensor总数
-				double randomFloat = r.nextDouble();
-				if(randomFloat<(1-loseRatio)){
-					TsPoint point=new TsPoint();
-					point.setDeviceCode(deviceCode);
-					String sensorCode = SENSOR_CODES.get(sensorNum);
-					point.setSensorCode(sensorCode);
-					point.setValue(getValue(deviceCode,sensorCode,virtualTime));
-					point.setTimestamp(virtualTime);
-					points.add(point);
+			int index=0;
+			while (index<cacheSize) {
+				virtualTime+=index*SystemParam.APPEND_STEP;
+				for(int sensorNum=0;sensorNum<sn;sensorNum++){//500为sensor总数
+					double randomFloat = r.nextDouble();
+					if(randomFloat<(1-loseRatio)){
+						TsPoint point=new TsPoint();
+						point.setDeviceCode(deviceCode);
+						String sensorCode = SENSOR_CODES.get(sensorNum);
+						point.setSensorCode(sensorCode);
+						point.setValue(getValue(deviceCode,sensorCode,virtualTime));
+						point.setTimestamp(virtualTime);
+						points.add(point);
+					}
 				}
+				index++;
 			}
 			linkedPoints.addLast(points);
 		}

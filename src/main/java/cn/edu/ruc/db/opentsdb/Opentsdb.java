@@ -24,6 +24,7 @@ import cn.edu.ruc.db.Status;
 import cn.edu.ruc.db.TsPoint;
 import cn.edu.ruc.db.opentsdb.entity.PointPut;
 import cn.edu.ruc.db.opentsdb.entity.PointPutTag;
+import cn.edu.ruc.enums.AggreType;
 
 /**
  * Hello world!
@@ -34,6 +35,9 @@ public class Opentsdb extends DBBase
 	private String URL="http://%s:%s";
 	private String PUT_URL="/api/put";
 	private String QUERY_URL="/api/query";
+	public static  String METRIC="wind.val.perform";//time.series.perform
+	private static String DEViCE_TAG="d";
+	private static String SENSOR_TAG="s";
     public static void main( String[] args ) throws Exception
     {  
     		Core.main(args);
@@ -58,13 +62,6 @@ public class Opentsdb extends DBBase
 
     //连接数据库
 	private HttpClient getHttpClient(){
-//		HttpClientBuilder hb = HttpClientBuilder.create();
-//		RequestConfig config=RequestConfig.custom().setConnectTimeout(5000).setConnectionRequestTimeout((int)TimeUnit.HOURS.toMillis(1)).setSocketTimeout((int)TimeUnit.HOURS.toMillis(1)).build();
-//		hb.setDefaultRequestConfig(config);
-//		HttpClient hc = hb.build();
-//		return hc;
-//疑惑：既然有HttpClient这个类了，为什么不直接建立一个HttpClient的对象，new HttpClient hc? 
-//config 里面的参数含义跟光哥确认？
 		return HttpPoolManager.getHttpClient();
 		
 	}
@@ -76,10 +73,7 @@ public class Opentsdb extends DBBase
 		long costTime=0L;
 		try {
 			HttpEntity entity = new StringEntity(data);
-//这是将json格式进一步封装成？
 			post.setEntity(entity);
-//post.set操作后，是不是说向数据库操作的所有操作（有哪些呢？）都已将准备完毕？只等一声令下？
-			
 			long startTime = System.nanoTime();
 			response = hc.execute(post);
 			long endTime = System.nanoTime();
@@ -116,31 +110,28 @@ public class Opentsdb extends DBBase
 		String json =JSON.toJSONString(list2);//调用这个工具JSON.toJSONString将输入的数据转换为json格式
 		return insertByHttpClient(json);	    
 	}
-
-	@Override
-	public Status selectByDeviceAndSensor(TsPoint point, Date startTime,
+	public Status selectByDeviceAndSensor(String device,String sensor, Date startTime,
 			Date endTime) {
-		/*
-		 * 查询某个指定编号设备，指定编号传感器，在一段时间内的数据 
-        比如 查询28号风机，18号温度传感器在2017年6月3日到2017年6月4日的所有数据
-		 */
 	    Map<String,Object> map = new  HashMap<String,Object>();
 		map.put("start",startTime.getTime());
 		map.put("end", endTime.getTime());
 		Map<String,Object> subQuery = new HashMap<String ,Object>();
 		subQuery.put("aggregator", "sum");
-		subQuery.put("metric", "time.series.perform");
+		subQuery.put("metric", "METRIC");
 		Map<String,Object> subTag = new HashMap<String ,Object>();
-		subTag.put("host",point.getDeviceCode());
-		subTag.put("dc",point.getSensorCode());
+		subTag.put(DEViCE_TAG,device);
+		subTag.put(SENSOR_TAG,sensor);
 		subQuery.put("tags", subTag);
-		
-//
 		List<Map<String,Object>> list = new ArrayList<>();
 		list.add(subQuery);
 		map.put("queries",list);
 		String json=JSON.toJSONString(map);		
 		return queriesByHttpClient(json);
+	}
+	@Override
+	public Status selectByDeviceAndSensor(TsPoint point, Date startTime,
+			Date endTime) {
+		return selectByDeviceAndSensor(point.getDeviceCode(), point.getSensorCode(), startTime, endTime);
 	}
 	private Status queriesByHttpClient(String data){
 		HttpClient hc = getHttpClient();
@@ -176,258 +167,84 @@ public class Opentsdb extends DBBase
 
 	@Override
 	public Status selectByDevice(TsPoint point, Date startTime, Date endTime) {
-		// TODO Auto-generated method stub
-		//比如 查询28号风机，所有传感器2017年6月3日到2017年6月4日所有的数据
-		/*
-		 * 此为查询所有传感器，相比于上面的指定传感器，此处的SensorCode，设置为*即可
-		 */
-		  Map<String,Object> map = new  HashMap<String,Object>();
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "sum");
-			subQuery.put("metric", "time.series.perform");
-			
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc","*");//此处的SensorCode，设置为*
-			subQuery.put("tags", subTag); 
-			
-			List <Map<String,Object>>list = new ArrayList<>();
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
+		return selectByDeviceAndSensor(point.getDeviceCode(), "*", startTime, endTime);
 	}
 
 	@Override
 	public Status selectDayMaxByDevice(TsPoint point, Date startTime,
 			Date endTime) {
-		  Map<String,Object> map = new  HashMap<String,Object>();
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "max");
-			subQuery.put("metric", "time.series.perform");
-			//增加downsample
-			subQuery.put("downsample", "24h-max");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			//此处的SensorCode，设置为*
-			subTag.put("dc","*");
-			subQuery.put("tags", subTag);  //将此注释掉,默认应该是会选择所有的
-			List<Map<String,Object>> list = new ArrayList<>();//最外层的[]
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
-		
+		return selectTimeAggreByDeviceAndSensor(AggreType.TIME_HOUR,24,AggreType.MAX, point.getDeviceCode(), "*", startTime, endTime);
 	}
 
 	@Override
 	public Status selectDayMinByDevice(TsPoint point, Date startTime,
 			Date endTime) {
-		// TODO Auto-generated method stub
-		/* 第5个select
-		 * 查询某个指定编号设备所有传感器在某段时间,每天的最小值 
- 比如 查询25号风机， 2017年6月3日到2017年6月30日的所有传感器每天的最小值
- 	 		每个传感器每天的最小值，每个传感器.
- 	 		每天中的某一天的最小值用"downsample", "24h-min"来选择
-		 */
-		
-		 Map<String,Object> map = new  HashMap<String,Object>();
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "min");
-			subQuery.put("metric", "time.series.perform");
-			subQuery.put("downsample", "24h-min");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc","*");		
-			List<Map<String,Object>> list = new ArrayList<>();
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
+		return selectTimeAggreByDeviceAndSensor(AggreType.TIME_HOUR,24,AggreType.MIN, point.getDeviceCode(), "*", startTime, endTime);
 	}
 
 	@Override
 	public Status selectDayAvgByDevice(TsPoint point, Date startTime,
 			Date endTime) {
-			Map<String,Object> map = new  HashMap<String,Object>();
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "avg");
-			subQuery.put("metric", "time.series.perform");
-			subQuery.put("downsample", "24h-avg");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc","*");	
-			List<Map<String,Object>> list = new ArrayList<>(); 
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
+			return selectTimeAggreByDeviceAndSensor(AggreType.TIME_HOUR,24,AggreType.AVG, point.getDeviceCode(), "*", startTime, endTime);
+
 	}
 
 	@Override
 	public Status selectHourMaxByDevice(TsPoint point, Date startTime,
 			Date endTime) {
-		// TODO Auto-generated method stub
-		/*查询某个指定编号设备所有传感器在某段时间,每个小时的最大值 
- 比如 查询25号风机， 2017年6月3日到2017年6月4日的所有传感器每个小时的最大值
-		 *  
-		 *  只是将上面的downsample的单位改为1h
-		 */
-		 Map<String,Object> map = new  HashMap<String,Object>();
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "max");
-			subQuery.put("metric", "time.series.perform");
-			subQuery.put("downsample", "1h-max");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc","*");	
-			List<Map<String,Object>> list = new ArrayList<>(); 
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
+		return selectTimeAggreByDeviceAndSensor(AggreType.TIME_HOUR,1,AggreType.MAX, point.getDeviceCode(), "*", startTime, endTime);
 	}
 
 	@Override
 	public Status selectHourMinByDevice(TsPoint point, Date startTime,
 			Date endTime) {
-		// TODO Auto-generated method stub
-		/*
-		 *查询某个指定编号设备所有传感器在某段时间,每个小时的最小值 
- 比如 查询25号风机， 2017年6月3日到2017年6月4日的所有传感器每个小时的最小值
-		 */
-		 Map<String,Object> map = new  HashMap<String,Object>();
-	
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "min");
-			subQuery.put("metric", "time.series.perform");
-			subQuery.put("downsample", "1h-min");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc","*");	
-			List<Map<String,Object>> list = new ArrayList<>(); 
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
+			return selectTimeAggreByDeviceAndSensor(AggreType.TIME_HOUR,1,AggreType.MIN, point.getDeviceCode(), "*", startTime, endTime);
+
 	}
 
 	@Override
 	public Status selectHourAvgByDevice(TsPoint point, Date startTime,
 			Date endTime) {
-		// TODO Auto-generated method stub
-		/*
-		 * 查询某个指定编号设备所有传感器在某段时间,每个小时的平均值 
- 比如 查询25号风机， 2017年6月3日到2017年6月4日的所有传感器每个小时的平均值
-		 */
-		 Map<String,Object> map = new  HashMap<String,Object>();
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "avg");
-			subQuery.put("metric", "time.series.perform");
-			subQuery.put("downsample", "1h-avg");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc","*");	
-			List<Map<String,Object>> list = new ArrayList<>(); 
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
+			return selectTimeAggreByDeviceAndSensor(AggreType.TIME_HOUR,1,AggreType.AVG, point.getDeviceCode(), "*", startTime, endTime);
 	}
 
 	@Override
 	public Status selectMinuteMaxByDeviceAndSensor(TsPoint point,
 			Date startTime, Date endTime) {
-		// TODO Auto-generated method stub
-		/*
-		 * 查询某个指定编号设备，指定编号传感器在某段时间,每分钟的最大值 
- 比如 查询25号风机， 2017年6月3日到2017年6月4日的8号温度传感器每分钟的最大值
-		 */
-//指定设备还指定了传感器，应该与上面的会有差别了,应该就不需要filter了
-		 Map<String,Object> map = new  HashMap<String,Object>();
-		 	map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "max");
-			subQuery.put("metric", "time.series.perform");
-			subQuery.put("downsample", "1m-max");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc",point.getSensorCode());
-			List<Map<String,Object>> list = new ArrayList<>(); 
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);	
+		return selectTimeAggreByDeviceAndSensor(AggreType.TIME_MINUTE,1,AggreType.MAX, point.getDeviceCode(), point.getSensorCode(), startTime, endTime);
 	}
 
 	@Override
 	public Status selectMinuteMinByDeviceAndSensor(TsPoint point,
 			Date startTime, Date endTime) {
-		// TODO Auto-generated method stub
-		/*查询某个指定编号设备，指定编号传感器在某段时间,每分钟的最小值 
- 比如 查询25号风机， 2017年6月3日到2017年6月4日的8号温度传感器每分钟的最小值
-		 * 
-		 */
-		 Map<String,Object> map = new  HashMap<String,Object>();
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "min");
-			subQuery.put("metric", "time.series.perform");
-			subQuery.put("downsample", "1m-min");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc",point.getSensorCode());
-			subQuery.put("tags", subTag);	
-			List<Map<String,Object>> list = new ArrayList<>(); 
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
+			return selectTimeAggreByDeviceAndSensor(AggreType.TIME_MINUTE,1,AggreType.MIN, point.getDeviceCode(), point.getSensorCode(), startTime, endTime);
 	}
 
 	@Override
 	public Status selectMinuteAvgByDeviceAndSensor(TsPoint point,
 			Date startTime, Date endTime) {
-		// TODO Auto-generated method stub
-		/*查询某个指定编号设备，指定编号传感器在某段时间,每分钟的平均值 
- 比如 查询25号风机， 2017年6月3日到2017年6月4日的8号温度传感器每分钟的平均值
-		 * 
-		 */
-		 Map<String,Object> map = new  HashMap<String,Object>();
-			map.put("start",startTime.getTime());
-			map.put("end", endTime.getTime());
-			Map<String,Object> subQuery = new HashMap<String ,Object>();
-			subQuery.put("aggregator", "avg");
-			subQuery.put("metric", "time.series.perform");
-			subQuery.put("downsample", "1m-avg");
-			Map<String,Object> subTag = new HashMap<String ,Object>();
-			subTag.put("host",point.getDeviceCode());
-			subTag.put("dc",point.getSensorCode());
-			subQuery.put("tags", subTag);	
-			List<Map<String,Object>> list = new ArrayList<>(); 
-			list.add(subQuery);
-			map.put("queries",list);
-			String json=JSON.toJSONString(map);
-			return queriesByHttpClient(json);
+			return selectTimeAggreByDeviceAndSensor(AggreType.TIME_MINUTE,1,AggreType.AVG, point.getDeviceCode(), point.getSensorCode(), startTime, endTime);
 	}
 
-
+	private Status selectTimeAggreByDeviceAndSensor(String timeUnit,int interval,String aggerType,String device,String sensor,
+			Date startTime, Date endTime) {
+		Map<String,Object> map = new  HashMap<String,Object>();
+		map.put("start",startTime.getTime());
+		map.put("end", endTime.getTime());
+		Map<String,Object> subQuery = new HashMap<String ,Object>();
+		subQuery.put("aggregator", "avg");
+		subQuery.put("metric", METRIC);
+		subQuery.put("downsample", String.format("%s%s-%s", interval,timeUnit,aggerType));
+		Map<String,Object> subTag = new HashMap<String ,Object>();
+		subTag.put(DEViCE_TAG,device);
+		subTag.put(SENSOR_TAG,sensor);
+		subQuery.put("tags", subTag);	
+		List<Map<String,Object>> list = new ArrayList<>(); 
+		list.add(subQuery);
+		map.put("queries",list);
+		String json=JSON.toJSONString(map);
+		return queriesByHttpClient(json);
+	}
 
 	@Override
 	public Status updatePoints(List<TsPoint> points) {
@@ -456,7 +273,6 @@ public class Opentsdb extends DBBase
 
 	@Override
 	public Status deletePoints(Date date) {
-		// TODO Auto-generated method stub
 		//这里删除好像是要改配置文件的，默认好像有什么情况是不能删除的。
 		/*
 		 * 删除某个时间点之前的所有数据
@@ -507,13 +323,13 @@ public class Opentsdb extends DBBase
 				sc.setLength(0);
 				List<TsPoint> tsFiles = Core.generateLoadData(sumTimes, i + 1);
 				for (TsPoint point : tsFiles) {
-					sc.append("sys.test");//TODO 该名字需要修改
+					sc.append(METRIC);//
 					sc.append(" ");
-					sc.append("device_code");
+					sc.append(DEViCE_TAG);
 					sc.append("=");
 					sc.append(point.getDeviceCode());
 					sc.append(",");
-					sc.append("sensor_code");
+					sc.append(SENSOR_TAG);
 					sc.append("=");
 					sc.append(point.getSensorCode());
 					sc.append(" ");
@@ -542,94 +358,36 @@ public class Opentsdb extends DBBase
 
 	@Override
 	public Status selectMaxByDeviceAndSensor(String deviceCode, String sensorCode, Date startTime, Date endTime) {
-		// TODO Auto-generated method stub
-//		查询指定设备，指定传感器，在指定开始时间和结束时间之间的最大值
-//	直接使用aggragator 
-	    Map<String,Object> map = new  HashMap<String,Object>();
-	 	map.put("start",startTime.getTime());
-		map.put("end", endTime.getTime());
-		Map<String,Object> subQuery = new HashMap<String ,Object>();
-		subQuery.put("aggregator", "max");
-		subQuery.put("metric", "time.series.perform");
-		
-		Map<String,Object> subTag = new HashMap<String ,Object>();
-		subTag.put("host",deviceCode);
-		subTag.put("dc",sensorCode);
-		subQuery.put("tags", subTag);
-		
-		List<Map<String,Object>> list = new ArrayList<>();
-		list.add(subQuery);
-		map.put("queries",list);
-		String json=JSON.toJSONString(map);	
-		return queriesByHttpClient(json);
+		return selectAggrByDeviceAndSensor(AggreType.MAX, deviceCode, sensorCode, startTime, endTime);
 	}
 
 	@Override
 	public Status selectMinByDeviceAndSensor(String deviceCode, String sensorCode, Date startTime, Date endTime) {
-		// TODO Auto-generated method stub
-//		查询指定设备，指定传感器，在指定开始时间和结束时间之间的最小值
-	    Map<String,Object> map = new  HashMap<String,Object>();
-		map.put("start",startTime.getTime());
-		map.put("end", endTime.getTime());
-		Map<String,Object> subQuery = new HashMap<String ,Object>();
-		subQuery.put("aggregator", "min");
-		subQuery.put("metric", "time.series.perform");
-		
-		Map<String,Object> subTag = new HashMap<String ,Object>();
-		subTag.put("host",deviceCode);
-		subTag.put("dc",sensorCode);
-		subQuery.put("tags", subTag);
-		
-		List<Map<String,Object>> list = new ArrayList<>();
-		list.add(subQuery);
-		map.put("queries",list);
-		String json=JSON.toJSONString(map);
-		System.out.println(json);
-		
-		return queriesByHttpClient(json);
+		return selectAggrByDeviceAndSensor(AggreType.MIN, deviceCode, sensorCode, startTime, endTime);
 	}
 
 	@Override
 	public Status selectAvgByDeviceAndSensor(String deviceCode, String sensorCode, Date startTime, Date endTime) {
-		// TODO Auto-generated method stub
-//		查询指定设备，指定传感器，在指定开始时间和结束时间之间的平均值
-	    Map<String,Object> map = new  HashMap<String,Object>();
-	    map.put("start",startTime.getTime());
-		map.put("end", endTime.getTime());
-		Map<String,Object> subQuery = new HashMap<String ,Object>();
-		subQuery.put("aggregator", "avg");
-		subQuery.put("metric", "time.series.perform");
-		
-		Map<String,Object> subTag = new HashMap<String ,Object>();
-		subTag.put("host",deviceCode);
-		subTag.put("dc",sensorCode);
-		subQuery.put("tags", subTag);
-		
-		List<Map<String,Object>> list = new ArrayList<>();
-		list.add(subQuery);
-		map.put("queries",list);
-		String json=JSON.toJSONString(map);
-		return queriesByHttpClient(json);
+		return selectAggrByDeviceAndSensor(AggreType.AVG, deviceCode, sensorCode, startTime, endTime);
 	}
 
 	@Override
 	public Status selectCountByDeviceAndSensor(String deviceCode, String sensorCode, Date startTime, Date endTime) {
-		// TODO Auto-generated method stub
-//		查询指定设备，指定传感器，在指定开始时间和结束时间之间的记录数目
-//		这个还只能用downsample来做http://opentsdb.net/docs/build/html/user_guide/query/aggregators.html#count
-//		自己的测试query3试过可以做到
+		return selectAggrByDeviceAndSensor(AggreType.COUNT, deviceCode, sensorCode, startTime, endTime);
+	}
+	
+	private Status selectAggrByDeviceAndSensor(String aggrType,String deviceCode, String sensorCode, Date startTime, Date endTime) {
 	    Map<String,Object> map = new  HashMap<String,Object>();
 		map.put("start",startTime.getTime());
 		map.put("end", endTime.getTime());
 		long tms=endTime.getTime()-startTime.getTime();
 		Map<String,Object> subQuery = new HashMap<String ,Object>();
-		subQuery.put("aggregator", "sum");//此只能用sum，不能用count，用count则结果出错
-		subQuery.put("metric", "time.series.perform");
-		subQuery.put("downsample", tms+"ms-count");
-		
+		subQuery.put("aggregator", "avg");//此只能用sum，不能用count，用count则结果出错
+		subQuery.put("metric", METRIC);
+		subQuery.put("downsample", tms+"ms-"+aggrType);
 		Map<String,Object> subTag = new HashMap<String ,Object>();
-		subTag.put("host",deviceCode);
-		subTag.put("dc",sensorCode);
+		subTag.put(DEViCE_TAG,deviceCode);
+		subTag.put(SENSOR_TAG,sensorCode);
 		subQuery.put("tags", subTag);	
 		List<Map<String,Object>> list = new ArrayList<>();
 		list.add(subQuery);
@@ -637,6 +395,4 @@ public class Opentsdb extends DBBase
 		String json=JSON.toJSONString(map);
 		return queriesByHttpClient(json);
 	}
-
-
 }

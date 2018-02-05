@@ -29,6 +29,15 @@ public class TSUtils {
 		return getDateByDateStr(dateStr,format).getTime();
 	}
 	/**
+	 * 
+	 * @return yyyyMMddHHmmss
+	 */
+	public static String getDateByTime(long time) {
+		SimpleDateFormat sdf=new SimpleDateFormat("yyyyMMddHHmmss");
+		Date date=new Date(time);
+		return sdf.format(date);
+	}
+	/**
 	 * 根据字符串获取日期
 	 * @param dateStr yyyy-MM-dd hh:mm:ss
 	 * @return
@@ -154,6 +163,8 @@ public class TSUtils {
 		long startTime= (long)(r.nextDouble()*(virEnd-begin)+begin);
 		long endTime=startTime+millis;
 		return new TimeSlot(startTime, endTime);
+	}
+	public static void main(String[] args) {
 	}
 }
 

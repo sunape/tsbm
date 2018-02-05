@@ -1,15 +1,17 @@
 package cn.edu.ruc.db.opentsdb.entity;
 
-import cn.edu.ruc.db.TsPoint;
+import java.io.Serializable;
+
+import cn.edu.ruc.db.opentsdb.Opentsdb;
 
 /**
 @author Wang-Practice makes perfect
 @version 2017年7月19日
 类说明
 */
-public class PointPut  {
-//	public static final long serialVersionUID = 1L;
-	public String metric="time.series.perform";
+public class PointPut  implements Serializable{
+	public static final long serialVersionUID = 1L;
+	public String metric=Opentsdb.METRIC;
 	public String timestamp;
 	public Object value;
 	public PointPutTag tags;

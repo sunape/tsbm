@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import cn.edu.ruc.TSUtils;
 import cn.edu.ruc.TimeSlot;
 import cn.edu.ruc.biz.db.BizDBUtils;
+import cn.edu.ruc.biz.db.BizDBUtils2;
 import cn.edu.ruc.biz.model.LoadRatio;
 import cn.edu.ruc.db.DBBase;
 import cn.edu.ruc.db.Status;
@@ -51,10 +52,11 @@ public class Core {
 	public static final int SLEEP_TIMES=5000;
 	private static final Logger LOGGER=LoggerFactory.getLogger(Core.class);
 	public static void main(String[] args) throws Exception {
-		
+		BizDBUtils2.initDataBase();
 		initParam(args);
 		initInnerFucntion();//初始化内置函数
 //		BizDBUtils.createTables();
+		BizDBUtils2.saveParam();
 		switch (SystemParam.TEST_MODE) {
 		case TestMode.IMPORT:
 			DBBase dbBase = Constants.getDBBase();
@@ -67,7 +69,7 @@ public class Core {
 		case TestMode.OVERFLOW:
 			break;
 		case TestMode.READ:
-			startStressUnAppend(LoadTypeEnum.SIMPLE_READ);
+			startStressUnAppend();
 			break;
 		case TestMode.MULTI:
 			break;
@@ -78,9 +80,6 @@ public class Core {
 		System.exit(0);
 	}
 	private static void initParam(String[] args) {
-		for(String str:args) {
-			System.out.print(str+" ");
-		}
 		Options options=new Options();
 		Option config = Option.builder("cf").argName("cfg name").hasArg().desc("Config file path (optional)").build();
 		Option bd = Option.builder("bd").argName("bd name").hasArg().desc("Binding file path (optional)").build();
@@ -104,6 +103,75 @@ public class Core {
 			e.printStackTrace();
 		}
 	}
+	private static void startStressUnAppend() {
+		DBBase dbBase = Constants.getDBBase();
+		int currentClients=0;
+		int maxClients=SystemParam.READ_MAX_CLINETS;
+		int minClients=SystemParam.READ_MIN_CLINETS;
+		currentClients=minClients;
+		while(currentClients<maxClients){
+			currentClients++;
+			execReadByClients(currentClients);//用currentClients客户端执行请求
+		}
+	}
+	/**
+	 * 用currentClients客户端执行请求
+	 * @param currentClients
+	 */
+	private static void execReadByClients(int currentClients) {
+		ExecutorService pool = Executors.newFixedThreadPool(currentClients);
+		CompletionService<Long[]> cs = new ExecutorCompletionService<Long[]>(pool);
+		long startTime=System.nanoTime();
+		for( int index=0;index<currentClients;index++){
+			cs.submit(new Callable<Long[]>() {
+				@Override
+				public Long[] call() throws Exception {
+					Long[] results=new Long[2];
+					long endTime=System.currentTimeMillis()+TimeUnit.SECONDS.toMillis(SystemParam.READ_TIMES);
+					while(System.currentTimeMillis()<endTime) {
+						Status status=execRead();
+						if(status.isOK()) {
+							results[0]=status.getCostTime();
+							results[1]=results[1]+1;
+						}
+					}
+					return results;
+				}
+			});
+		}
+		try {
+			long endTime=System.nanoTime();
+			long costTime=endTime-startTime;
+			long sumTimeout=0L;
+			long sumSuccessNum=0L;
+			for(int index=0;index<currentClients;index++) {
+				Long[] results = cs.take().get();
+				sumTimeout+=results[0];
+				sumSuccessNum+=results[1];
+			}
+			int tps=(int) (sumSuccessNum/(costTime/Math.pow(10, 9)));
+			long avgtimeout=sumTimeout/sumSuccessNum;
+			LOGGER.info("clients:{},throughput:[{} requests/sec],timeout [{} us/kpoints]",currentClients,tps,avgtimeout);
+			Thread.sleep(TimeUnit.SECONDS.toMillis(3));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	/**
+	 * 执行读方法
+	 * read 
+	 * 缩量查询 每天中的每分钟的聚合值
+	 * 聚合查询 某100分钟的聚合值
+	 * 简单查询 查询1小时内的所有值
+	 * @return
+	 */
+	private static Status execRead() {
+		//FIXME
+		//1 计算三类查询各个比例
+		//2 生成查询类型
+		//3 执行查询
+		return null;
+	}
 	/**
 	 * 非加载数据 压力测试
 	 * 线程数(用户数)从1不断增加到200
@@ -113,13 +181,16 @@ public class Core {
 	 */
 	private static void startStressUnAppend(LoadTypeEnum loadTypeEnum) {
 		DBBase dbBase = Constants.getDBBase();
-		//
 		int currentClients=0;
-		while(currentClients<100){
+		int maxClients=SystemParam.READ_MAX_CLINETS;
+		int minClients=SystemParam.READ_MIN_CLINETS;
+		currentClients=minClients;
+		while(currentClients<maxClients){
 			currentClients++;
 			Map<Integer,Integer> countMap=new HashMap<Integer, Integer>();
 			Map<Integer,Long> timeoutMap=new HashMap<Integer, Long>();
 			ExecutorService pool = Executors.newFixedThreadPool(currentClients);
+			CompletionService<Status> cs = new ExecutorCompletionService<Status>(pool);
 			long startTime=System.currentTimeMillis();
 			for( int index=0;index<currentClients;index++){
 				final int thisIndex=index;
@@ -128,6 +199,7 @@ public class Core {
 				pool.execute(new Runnable() {
 					@Override
 					public void run() {
+						//记录总响应时间，总操作数
 						//执行请求操作 并计数
 						Integer executeType = generateExecuteTypeByLoadType(loadTypeEnum);
 						long currentTime=System.currentTimeMillis();
@@ -323,6 +395,8 @@ public class Core {
 		long pointCostTimeSum=0;
 		long costTimeSum=0L;
 		println("total import["+sumTimes+"]times");
+		ExecutorService pool = Executors.newFixedThreadPool(SystemParam.IMPORT_CLIENTS);
+		CompletionService<Status> cs = new ExecutorCompletionService<Status>(pool);
 		for(int i=0;i<sumTimes;i++){
 			Map<String, List<TsPoint>> map = generateLoadDataMap(sumTimes, i+1);
 			Set<String> deviceCodes = map.keySet();
@@ -331,8 +405,6 @@ public class Core {
 				deviceCodeLink.add(deviceCode);
 			}
 			int deviceCodeNums=deviceCodes.size();
-			ExecutorService pool = Executors.newFixedThreadPool(SystemParam.IMPORT_CLIENTS);
-			CompletionService<Status> cs = new ExecutorCompletionService<Status>(pool);
 
 			long startTime=System.nanoTime();
 			int pointSize=0;
@@ -679,7 +751,8 @@ public class Core {
 	 */
 	private static List<String> initSensorCodes() {
 		for(int i=0;i<SystemParam.IMPORT_SENSOR_NUM;i++){
-			String sensorCode="s_"+TSUtils.getRandomLetter(3)+"_"+i;
+//			String sensorCode="s_"+TSUtils.getRandomLetter(3)+"_"+i;
+			String sensorCode="s_"+i;
 			Constants.SENSOR_CODES.add(sensorCode);
 		}
 		return Constants.SENSOR_CODES;
@@ -691,7 +764,8 @@ public class Core {
 	 */
 	private static List<String> initDeviceCodes() {
 		for(int i=0;i<SystemParam.IMPORT_DEV_NUM;i++){
-			String deviceCode="d_"+TSUtils.getRandomLetter(2)+"_"+i;
+//			String deviceCode="d_"+TSUtils.getRandomLetter(2)+"_"+i;
+			String deviceCode="d_"+i;
 			Constants.DEVICE_CODES.add(deviceCode);
 		}
 		return Constants.DEVICE_CODES;
@@ -807,58 +881,6 @@ public class Core {
 	 */
 	public static void initSensorFunction() {
 		initSensorFunction(SystemParam.IMPORT_SENSOR_NUM);
-//		//根据传进来的各个函数比例进行配置
-//		double sumRatio=SystemParam.FUNCTION_CONSTANT_RATIO+SystemParam.FUNCTION_LINE_RATIO+SystemParam.FUNCTION_RANDOM_RATIO+SystemParam.FUNCTION_SIN_RATIO+SystemParam.FUNCTION_SQUARE_RATIO;
-//		if(sumRatio!=0
-//			&&SystemParam.FUNCTION_CONSTANT_RATIO>=0
-//			&&SystemParam.FUNCTION_LINE_RATIO>=0
-//			&&SystemParam.FUNCTION_RANDOM_RATIO>=0
-//			&&SystemParam.FUNCTION_SIN_RATIO>=0
-//			&&SystemParam.FUNCTION_SQUARE_RATIO>=0){
-//			double constantArea=SystemParam.FUNCTION_CONSTANT_RATIO/sumRatio;
-//			double lineArea=constantArea+SystemParam.FUNCTION_LINE_RATIO/sumRatio;
-//			double randomArea=lineArea+SystemParam.FUNCTION_RANDOM_RATIO/sumRatio;
-//			double sinArea=randomArea+SystemParam.FUNCTION_SIN_RATIO/sumRatio;
-//			double squareArea=sinArea+SystemParam.FUNCTION_SQUARE_RATIO/sumRatio;
-//			Random r=new Random();
-//			for(int i=0;i<SystemParam.IMPORT_SENSOR_NUM;i++){
-//				double property = r.nextDouble();
-//				FunctionParam param=null;
-//				Random fr=new Random();
-//				double middle = fr.nextDouble();
-//				if(property>=0&&property<constantArea){//constant
-//					int index=(int)(middle*Constants.CONSTANT_LIST.size());
-//					param=Constants.CONSTANT_LIST.get(index);
-//				}
-//				if(property>=constantArea&&property<lineArea){//line
-//					int index=(int)(middle*Constants.LINE_LIST.size());
-//					param=Constants.CONSTANT_LIST.get(index);
-//				}
-//				if(property>=lineArea&&property<randomArea){//random
-//					int index=(int)(middle*Constants.RANDOM_LIST.size());
-//					param=Constants.RANDOM_LIST.get(index);
-//				}
-//				if(property>=randomArea&&property<sinArea){//sin
-//					int index=(int)(middle*Constants.SIN_LIST.size());
-//					param=Constants.SIN_LIST.get(index);
-//				}
-//				if(property>=sinArea&&property<squareArea){//square
-//					int index=(int)(middle*Constants.SQUARE_LIST.size());
-//					param=Constants.SQUARE_LIST.get(index);
-//				}
-//				if(param==null){
-//					System.err.println(" initSensorFunction() 初始化函数比例有问题！");
-//					System.exit(0);
-//				}
-//				String sensorCode = Constants.SENSOR_CODES.get(i);
-//				Constants.SENSOR_FUNCTION.put(sensorCode,param);
-//				
-//			}
-//			
-//		}else{
-//			System.err.println("function ratio must >=0 and sum>0");
-//			System.exit(0);
-//		}
 	}
 	/**
 	 * 从已有传感器名称中获取一个传感器名称 

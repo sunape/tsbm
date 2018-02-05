@@ -55,7 +55,8 @@ public class SystemParam {
 	public static double APPEND_LOSE_RATIO=0.001;
 //	# 写入客户端数
 	public static int APPEND_CLIENTS=50;
-
+//	# 测试环数
+	public static int APPEND_LOOP=60;
 	
 	
 //	# read mode 参数
@@ -69,7 +70,7 @@ public class SystemParam {
 
 	public static int READ_MIN_CLINETS=1;
 	public static int READ_MAX_CLINETS=100;
-	
+	public static int READ_TIMES=10;
 	
 //	# multi 参数 读写混合 读背景下写入，写背景下测读
 
