@@ -32,9 +32,9 @@ import cn.edu.ruc.enums.AggreType;
  */
 public class Opentsdb extends DBBase
 {
-	private String URL="http://%s:%s";
-	private String PUT_URL="/api/put";
-	private String QUERY_URL="/api/query";
+	private static String URL="http://%s:%s";
+	private static String PUT_URL="/api/put";
+	private static String QUERY_URL="/api/query";
 	public static  String METRIC="wind.val.perform";//time.series.perform
 	private static String DEViCE_TAG="d";
 	private static String SENSOR_TAG="s";
