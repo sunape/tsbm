@@ -14,6 +14,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.util.EntityUtils;
 
 import com.alibaba.fastjson.JSON;
 
@@ -76,6 +77,7 @@ public class Opentsdb extends DBBase
 			post.setEntity(entity);
 			long startTime = System.nanoTime();
 			response = hc.execute(post);
+			System.out.println(EntityUtils.toString(response.getEntity()));
 			long endTime = System.nanoTime();
 			costTime=endTime-startTime; 
 		} catch (Exception e) {
