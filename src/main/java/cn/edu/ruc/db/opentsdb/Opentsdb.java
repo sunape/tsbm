@@ -77,9 +77,7 @@ public class Opentsdb extends DBBase
 			post.setEntity(entity);
 			long startTime = System.nanoTime();
 			response = hc.execute(post);
-			System.out.println(response.getStatusLine().getReasonPhrase());
 			System.out.println(response.getStatusLine().getStatusCode());
-			System.out.println(EntityUtils.toString(response.getEntity()));
 			long endTime = System.nanoTime();
 			costTime=endTime-startTime; 
 		} catch (Exception e) {
@@ -112,7 +110,12 @@ public class Opentsdb extends DBBase
 				}
 		}
 		String json =JSON.toJSONString(list2);//调用这个工具JSON.toJSONString将输入的数据转换为json格式
-		return insertByHttpClient(json);	    
+		Status status = insertByHttpClient(json);
+		if(status.isOK()) {
+			return Status.OK(status.getCostTime(), points.size());
+		}else {
+			return status;
+		}
 	}
 	public Status selectByDeviceAndSensor(String device,String sensor, Date startTime,
 			Date endTime) {
