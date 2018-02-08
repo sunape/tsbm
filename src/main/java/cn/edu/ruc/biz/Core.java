@@ -71,6 +71,7 @@ public class Core {
 		case TestMode.OVERFLOW:
 			break;
 		case TestMode.READ:
+			initConstant();
 			startStressUnAppend();
 			break;
 		case TestMode.MULTI:
