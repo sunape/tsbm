@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.core.util.TimeUtil;
 import cn.edu.ruc.TSUtils;
 import cn.edu.ruc.TimeSlot;
 import cn.edu.ruc.biz.db.BizDBUtils;
@@ -51,6 +52,7 @@ public class Core {
 	public static final String SYS_BINDING_PATH="bindings_path";
 	public static final int SLEEP_TIMES=5000;
 	private static final Logger LOGGER=LoggerFactory.getLogger(Core.class);
+	private static final Random R=new Random();
 	public static void main(String[] args) throws Exception {
 		BizDBUtils2.initDataBase();
 		initParam(args);
@@ -104,7 +106,6 @@ public class Core {
 		}
 	}
 	private static void startStressUnAppend() {
-		DBBase dbBase = Constants.getDBBase();
 		int currentClients=0;
 		int maxClients=SystemParam.READ_MAX_CLINETS;
 		int minClients=SystemParam.READ_MIN_CLINETS;
@@ -164,13 +165,49 @@ public class Core {
 	 * 聚合查询 某100分钟的聚合值
 	 * 简单查询 查询1小时内的所有值
 	 * @return
+	 * @throws Exception 
 	 */
-	private static Status execRead() {
+	private static Status execRead() throws Exception {
 		//FIXME
 		//1 计算三类查询各个比例
+		double aggreRatio = SystemParam.READ_AGGRE_RATIO;
+		double shrinkRatio = SystemParam.READ_SHRINK_RATIO;
+		double simpleRatio = SystemParam.READ_SIMPLE_RATIO;
+		double sum=aggreRatio+shrinkRatio+simpleRatio;
+		double aggre=aggreRatio/sum;
+		double shrink=(aggreRatio+shrinkRatio)/sum;
+		double simple=1.0;
+		Random r=new Random();
+		double nd = R.nextDouble();
+		DBBase dbBase = Constants.getDBBase();
+		Status status=null;
+		String deviceCode = Core.getDeviceCodeByRandom();
+		String sensorCode = Core.getSensorCodeByRandom();
+		if(nd>=0&&nd<aggre) {
+			//分析查询
+			//FIXME 时间需要修正
+			TimeSlot timeSlot = TSUtils.getRandomTimeBetween("2016-03-01 00:00:00","2017-06-30 00:00:00",TimeUnit.HOURS.toMillis(24));
+			status = dbBase.selectMaxByDeviceAndSensor(deviceCode, sensorCode, new Date(timeSlot.getStartTime()), new Date(timeSlot.getEndTime()));
+		}else if(nd>=aggre&&nd<shrink) {
+			TsPoint point =new TsPoint();
+			point.setDeviceCode(deviceCode);
+			point.setSensorCode(sensorCode);
+			//FIXME 时间需要修正
+			TimeSlot timeSlot = TSUtils.getRandomTimeBetween("2016-03-01 00:00:00","2017-06-30 00:00:00",TimeUnit.MINUTES.toMillis(60));
+			status=dbBase.selectMinuteAvgByDeviceAndSensor(point,  new Date(timeSlot.getStartTime()), new Date(timeSlot.getEndTime()));
+			//缩量查询
+		}else if(nd>=shrink&&nd<=simple){
+			//简单查询
+			TsPoint point =new TsPoint();
+			point.setDeviceCode(deviceCode);
+			point.setSensorCode(sensorCode);
+			//FIXME 时间需要修正
+			TimeSlot timeSlot = TSUtils.getRandomTimeBetween("2016-03-01 00:00:00","2017-06-30 00:00:00",TimeUnit.MINUTES.toMillis(100));
+			status=dbBase.selectByDeviceAndSensor(point,  new Date(timeSlot.getStartTime()), new Date(timeSlot.getEndTime()));
+		}
 		//2 生成查询类型
 		//3 执行查询
-		return null;
+		return status;
 	}
 	/**
 	 * 非加载数据 压力测试
