@@ -77,6 +77,8 @@ public class Opentsdb extends DBBase
 			post.setEntity(entity);
 			long startTime = System.nanoTime();
 			response = hc.execute(post);
+			System.out.println(response.getStatusLine().getReasonPhrase());
+			System.out.println(response.getStatusLine().getStatusCode());
 			System.out.println(EntityUtils.toString(response.getEntity()));
 			long endTime = System.nanoTime();
 			costTime=endTime-startTime; 
