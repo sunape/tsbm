@@ -23,6 +23,5 @@
 *.tar.gz
 *.tar
 
-./conf/*.properties
-**/routine
 /target/
+/perform.db
