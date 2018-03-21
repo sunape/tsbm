@@ -830,7 +830,9 @@ public class Core {
 	 * functionParam
 	 */
 	public static void initInnerFucntion() {
-		
+		if(Constants.LINE_LIST.size()>0||Constants.CONSTANT_LIST.size()>0||Constants.SIN_LIST.size()>0||Constants.SQUARE_LIST.size()>0||Constants.RANDOM_LIST.size()>0){
+			return;//已初始化，不需要再次初始化内置函数
+		}
 		FunctionXml xml=null;
 		try {
 			InputStream input = Core.class.getResourceAsStream("function.xml");

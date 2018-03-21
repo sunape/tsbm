@@ -390,6 +390,7 @@ public class Opentsdb extends DBBase
 		Map<String,Object> subQuery = new HashMap<String ,Object>();
 		subQuery.put("aggregator", "avg");//此只能用sum，不能用count，用count则结果出错
 		subQuery.put("metric", METRIC);
+		
 		subQuery.put("downsample", tms+"ms-"+aggrType);
 		Map<String,Object> subTag = new HashMap<String ,Object>();
 		subTag.put(DEViCE_TAG,deviceCode);

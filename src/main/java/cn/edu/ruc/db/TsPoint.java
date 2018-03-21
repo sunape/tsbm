@@ -1,5 +1,7 @@
 package cn.edu.ruc.db;
 
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 时序测点数据对象
@@ -23,6 +25,16 @@ public class TsPoint {
 	 * 单位为毫秒
 	 */
 	private long timestamp;
+	
+	
+	
+	
+	//==========
+	/**
+	 * key wei sensorcode
+	 * value 该key对应的值
+	 */
+	private Map<String,Object> valueMap=new HashMap<String,Object>();
 	public Object getValue() {
 		return value;
 	}

@@ -5,4 +5,4 @@ if [ -z "${BENCHMARK_HOME}" ]; then
 fi
 cd bin
 echo $(readlink -f ../conf/cfg.properties)
-sh startup.sh -cf $BENCHMARK_HOME/conf/cfg.properties  -bd $BENCHMARK_HOME/conf/bindings.properties
+sh startup.sh -cf $BENCHMARK_HOME/conf/cfg_write.properties  -bd $BENCHMARK_HOME/conf/bindings.properties -db $BENCHMARK_HOME/conf/db.properties
