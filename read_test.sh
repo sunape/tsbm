@@ -2,9 +2,9 @@
 
 
 OS=$(uname -a | cut -d " " -f 1)
-if [[ $OS="Darwin" ]]; then
+if [[ "$OS" = "Darwin" ]]; then
 	echo "this os is macos "
-elif [[ $OS="Linux" ]]; then
+elif [[ "$OS" = "Linux" ]]; then
 	#statements
 	echo "this os is linux"
 fi
@@ -26,9 +26,9 @@ do
   CHANGE_PARAMETER=$(echo $LINE | cut -d = -f 1)
   if [ -n "$LINE" ]; then
     if [ "$LINE" != "TEST" ]; then
-    	if [[ $OS="Darwin" ]]; then
+    	if [[ "$OS" = "Darwin" ]]; then
 			sed -i "" "s/^${CHANGE_PARAMETER}.*$/${LINE}/g" $BENCHMARK_HOME/conf/cfg_dyn.properties
-		elif [[ $OS="Linux" ]]; then
+		elif [[ "$OS" = "Linux" ]]; then
 			#statements
 			sed -i "s/^${CHANGE_PARAMETER}.*$/${LINE}/g" $BENCHMARK_HOME/conf/cfg_dyn.properties
 		fi
