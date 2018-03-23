@@ -1,9 +1,13 @@
 package cn.edu.ruc;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Vector;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -57,6 +61,9 @@ public class CoreBiz {
 		//一轮写入数据
 		long currentTime=tsParamConfig.getStartTime();
 		long endTime=tsParamConfig.getEndTime();
+		long programStartTime=System.currentTimeMillis();
+		List<Long> timeoutList=new ArrayList<>();
+		List<Integer> ppsList=new ArrayList<>();
 		while(currentTime<endTime) {
 			//设备数，客户端数，传感器数，开始时间，结束时间，
 			LinkedList<TsWrite> pkgs = generatePkg(currentTime);
@@ -80,6 +87,7 @@ public class CoreBiz {
 				Status status = cs.take().get();
 				if(status.isOK()) {
 					sumNum+=status.getPointNum();
+					timeoutList.add((long)(status.getCostTime()/status.getPointNum()));//us
 				}
 			}
 			long bizEndTime=System.currentTimeMillis();
@@ -89,12 +97,37 @@ public class CoreBiz {
 					(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
 					(tsParamConfig.getEndTime()-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
 					pps,sumNum);
+			ppsList.add(pps);
 			currentTime+=tsParamConfig.getStep()*tsParamConfig.getCacheTimes();
 			if(bizCost<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
 				Thread.sleep(tsParamConfig.getWritePulse()-bizCost);
 			}
 		}
 		pool.shutdown();
+		//生成result
+		result=generateWriteResult(timeoutList,ppsList);
+		result.setStartTime(programStartTime);
+		result.setEndTime(System.currentTimeMillis());
+		return result;
+	}
+	private TsWriteResult generateWriteResult(List<Long> timeoutList, List<Integer> ppsList) {
+		TsWriteResult result=new TsWriteResult();
+		Collections.sort(timeoutList);
+		result.setMaxTimeout(timeoutList.get(timeoutList.size()-1).intValue());
+		result.setMinTimeout(timeoutList.get(0).intValue());
+		long sum=0;
+		for(Long timeout:timeoutList) {
+			sum+=timeout;
+		}
+		result.setMeanTimeout((int)(sum/timeoutList.size()));
+		result.setFiftyTimeout(timeoutList.get((int)(timeoutList.size()*0.5)).intValue());
+		result.setNinty5Timeout(timeoutList.get((int)(timeoutList.size()*0.95)).intValue());
+		result.setBatchCode(tsParamConfig.getBatchCode());
+		long sumPps=0;
+		for(long pps:ppsList) {
+			sumPps+=pps;
+		}
+		result.setPps((int)(sumPps/ppsList.size()));
 		return result;
 	}
 	/**
@@ -159,11 +192,15 @@ public class CoreBiz {
 		ExecutorService pool = Executors.newFixedThreadPool(csn+1);
 		CompletionService<Long[]> cs = new ExecutorCompletionService<Long[]>(pool);
 		long startTime=System.nanoTime();
+		long programStartTime=System.currentTimeMillis();
+//		List<Long> timeoutList=new ArrayList<>();
+		List<Long> timeoutList=new Vector<>();
 		for(int clientIndex=0;clientIndex<csn;clientIndex++) {
 			cs.submit(new Callable<Long[]>() {
 				@Override
 				public Long[] call() throws Exception {
 					Long[] results=new Long[2];
+					results[0]=0L;
 					results[1]=0L;
 					long endTime=System.currentTimeMillis()+TimeUnit.SECONDS.toMillis(tsParamConfig.getReadPeriod());
 					Long bizStartTime;
@@ -171,8 +208,9 @@ public class CoreBiz {
 						TsQuery query = generateTsQuery();
 						Status status = execQuery(dbAdapter, query);
 						if(status.isOK()) {
-							results[0]=status.getCostTime();
+							results[0]+=status.getCostTime()/1000;//us
 							results[1]=results[1]+1;
+							timeoutList.add(status.getCostTime()/1000);//us
 						}
 						long bizEndTime=System.currentTimeMillis();
 						long bizCost=bizEndTime-bizStartTime;
@@ -210,14 +248,24 @@ public class CoreBiz {
 					results = cs.take().get();
 					sumTimeout+=results[0];
 					sumSuccessNum+=results[1];
+//					timeoutList.add(results[0]);
 			}
 			long costTime=System.nanoTime()-startTime;
 			int tps=(int) (sumSuccessNum/(costTime/Math.pow(10, 9)));
 			long avgtimeout=sumTimeout/sumSuccessNum;
 			LOGGER.info("clients {},throughput [{} requests/sec],mean timeout [{} us]",csn,tps,avgtimeout);
+			//返回数据处理
+			result.setBatchCode(tsParamConfig.getBatchCode());
+			result.setStartTime(programStartTime);
+			result.setEndTime(System.currentTimeMillis());
 			result.setMeanTimeout((int)avgtimeout);
 			result.setTps(tps);
 			result.setSumRequests(sumSuccessNum);
+			Collections.sort(timeoutList);
+			result.setMaxTimeout(timeoutList.get( timeoutList.size()-1).intValue());
+			result.setMinTimeout(timeoutList.get(0).intValue());
+			result.setNinty5Timeout(timeoutList.get((int)(timeoutList.size()*0.95)).intValue());
+			result.setFiftyTimeout(timeoutList.get((int)(timeoutList.size()*0.5)).intValue());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -261,8 +309,6 @@ public class CoreBiz {
 	public static Status execWrite(DBAdapter dbAdapter,TsWrite write) {
 		return dbAdapter.execWrite(dbAdapter.preWrite(write));
 	}
-	
-	
 	public CoreBiz(TsParamConfig tsParamConfig, TsDataSource tds) throws Exception {
 		super();
 		Core.initInnerFucntion();
@@ -338,5 +384,7 @@ public class CoreBiz {
 		}else{
 			System.err.println("function ratio must >=0 and sum>0");
 		}
+	}
+	public static void main(String[] args) {
 	}
 }
