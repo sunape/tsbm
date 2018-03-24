@@ -1,6 +1,7 @@
 package cn.edu.ruc.adapter;
 
 import cn.edu.ruc.base.TsDataSource;
+import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
 import cn.edu.ruc.db.Status;
@@ -16,7 +17,7 @@ public interface DBAdapter {
 	 * 初始化数据源和存储结构
 	 * @param dataSource 数据源连接参数
 	 */
-	public void initDataSource(TsDataSource ds);
+	public void initDataSource(TsDataSource ds,TsParamConfig tspc);
 	/**
 	 * 写入预处理
 	 */

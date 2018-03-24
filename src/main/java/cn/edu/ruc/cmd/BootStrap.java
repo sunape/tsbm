@@ -45,6 +45,7 @@ public class BootStrap {
 		Map<String,Object> jsonMap=new HashMap<String,Object>();
 		jsonMap.put("param_config", tpc);
 		jsonMap.put("data_source", tsds);
+		System.out.println(tsds.getDriverClass());
 		CoreBiz biz=new CoreBiz(tpc, tsds);
 		if("write".equals(tpc.getTestMode())) {
 			LOGGER.info("...........write start...........");

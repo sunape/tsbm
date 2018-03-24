@@ -10,6 +10,7 @@ import org.influxdb.dto.QueryResult;
 
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsPackage;
+import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
 import cn.edu.ruc.db.Status;
@@ -32,7 +33,7 @@ public class InfluxdbAdapter implements DBAdapter {
 	private static org.influxdb.InfluxDB INFLUXDB = null;
 	MediaType MEDIA_TYPE_TEXT = MediaType.parse("text/plain");
 	@Override
-	public void initDataSource(TsDataSource ds) {
+	public void initDataSource(TsDataSource ds,TsParamConfig tspc) {
 		URL=String.format(URL,ds.getIp(),ds.getPort());
 		WRITE_URL = URL +String.format(WRITE_URL,DB_NAME);
 		QUERY_URL = URL +String.format(QUERY_URL, DB_NAME);

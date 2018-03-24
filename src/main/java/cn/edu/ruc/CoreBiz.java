@@ -314,7 +314,7 @@ public class CoreBiz {
 		Core.initInnerFucntion();
 		this.tsParamConfig = tsParamConfig;
 		this.dbAdapter = (DBAdapter) Class.forName(tds.getDriverClass()).newInstance();
-		dbAdapter.initDataSource(tds);
+		dbAdapter.initDataSource(tds,tsParamConfig);
 		initShiftTime();
 		initSensorFunction();
 	}

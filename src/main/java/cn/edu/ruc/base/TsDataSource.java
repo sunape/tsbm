@@ -55,33 +55,5 @@ public class TsDataSource {
 				+ ", user=" + user + "]";
 	}
 	public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-		TsDataSource tsds=new TsDataSource();
-		tsds.setDriverClass("cn.edu.ruc.adapter.InfluxdbAdapter");
-		tsds.setIp("10.77.110.224");
-		tsds.setPasswd("123");
-		tsds.setUser("user");
-		tsds.setPort("8086");
-		DBAdapter adapter=(DBAdapter) Class.forName(tsds.getDriverClass()).newInstance();
-		adapter.initDataSource(tsds);
-		TsQuery query=new TsQuery();
-		query.setAggreType(2);
-		query.setDeviceName("d_0");
-		query.setSensorName("s_0");
-		query.setSensorLtValue(54.0);
-		query.setSensorGtValue(12.0);
-		query.setAggreType(2);
-		query.setGroupByUnit(2);
-		query.setQueryType(1);
-		Object preQuery = adapter.preQuery(query);
-		adapter.execQuery(preQuery);
-		TsPackage tsPkg=new TsPackage();
-		tsPkg.setTimestamp(System.currentTimeMillis());
-		tsPkg.setDeviceCode("d2");
-		tsPkg.appendValue("s1", 1.1);
-		tsPkg.appendValue("s2", 1.2);
-		TsWrite tsWrite = new TsWrite();
-		tsWrite.append(tsPkg);
-		Object preWrite = adapter.preWrite(tsWrite);
-		adapter.execWrite(preWrite);
 	}
 }
