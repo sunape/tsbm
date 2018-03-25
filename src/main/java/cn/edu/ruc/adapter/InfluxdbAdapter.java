@@ -134,7 +134,7 @@ public class InfluxdbAdapter implements DBAdapter {
 		}
 		if(tsQuery.getSensorGtValue()!=null) {
 			sc.append("and ");
-			sc.append("value >=");
+			sc.append("value <=");
 			sc.append(tsQuery.getSensorGtValue());
 			sc.append(" ");
 		}
@@ -154,7 +154,7 @@ public class InfluxdbAdapter implements DBAdapter {
 				sc.append(" time(1d)");
 				break;
 			case 5:
-				sc.append(" time(1m)");
+				sc.append(" time(1M)");
 				break;
 			case 6:
 				sc.append(" time(1y)");

@@ -2,19 +2,20 @@ package cn.edu.ruc.adapter;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsPackage;
 import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
-import cn.edu.ruc.biz.Constants;
 import cn.edu.ruc.db.Status;
 /**
  * iotdb 适配器
@@ -164,13 +165,131 @@ public class IotdbAdapter implements DBAdapter {
 	@Override
 	public Object preQuery(TsQuery tsQuery) {
 		// TODO Auto-generated method stub
-		return null;
+		
+		StringBuffer sc=new StringBuffer();
+		sc.append("select ");
+		switch (tsQuery.getQueryType()) {
+		case 1://简单查询
+			sc.append(tsQuery.getSensorName());
+			sc.append(" ");
+			break;
+		case 2://分析查询
+			sc.append("");
+			if(tsQuery.getAggreType()==1) {
+				sc.append("max_value(");
+			}
+			if(tsQuery.getAggreType()==2) {
+				sc.append("min_value(");
+			}
+			if(tsQuery.getAggreType()==3) {
+				sc.append("avg_value(");
+			}
+			if(tsQuery.getAggreType()==4) {
+				sc.append("count(");
+			}
+			sc.append(tsQuery.getSensorName());
+			sc.append(") ");
+			break;
+		default:
+			break;
+		}
+		sc.append("from ");
+		sc.append(ROOT_SERIES_NAME);
+		sc.append(".");
+		sc.append(tsQuery.getDeviceName());
+		sc.append(" ");
+		if(tsQuery.getStartTimestamp()!=null) {
+			sc.append("and ");
+			sc.append("time >=");
+			sc.append(tsQuery.getStartTimestamp());
+			sc.append(" ");
+		}
+		if(tsQuery.getEndTimestamp()!=null) {
+			sc.append("and ");
+			sc.append("time <=");
+			sc.append(tsQuery.getEndTimestamp());
+			sc.append(" ");
+		}
+		if(tsQuery.getSensorLtValue()!=null) {
+			sc.append("and ");
+			sc.append(tsQuery.getSensorName());
+			sc.append(">=");
+			sc.append(tsQuery.getSensorLtValue());
+			sc.append(" ");
+		}
+		if(tsQuery.getSensorGtValue()!=null) {
+			sc.append("and ");
+			sc.append(tsQuery.getSensorName());
+			sc.append("<=");
+			sc.append(tsQuery.getSensorGtValue());
+			sc.append(" ");
+		}
+		if(tsQuery.getGroupByUnit()!=null&&tsQuery.getQueryType()==2) {
+			sc.append("group by ");
+			switch (tsQuery.getGroupByUnit()) {
+			case 1:
+				sc.append(" (1s,[");
+				break;
+			case 2:
+				sc.append(" (1m,[");
+				break;
+			case 3:
+				sc.append(" (1h,[");
+				break;
+			case 4:
+				sc.append(" (1d,[");
+				break;
+			case 5:
+				sc.append(" (1M,[");
+				break;
+			case 6:
+				sc.append(" (1y,[");
+				break;
+			default:
+				break;
+			}
+			sc.append(tsQuery.getStartTimestamp());
+			sc.append(",");
+			sc.append(tsQuery.getEndTimestamp());
+			sc.append("])");
+		}
+		return sc.toString().replaceFirst("and", "where");
 	}
 
 	@Override
 	public Status execQuery(Object query) {
-		// TODO Auto-generated method stub
-		return null;
+		Connection conn=getConnection();
+		Statement statement=null;
+		long costTime=0;
+		try {
+			statement=conn.createStatement();
+			long startTime=System.nanoTime();
+			ResultSet rs = statement.executeQuery(query.toString());
+			long endTime=System.nanoTime();
+//			while(rs.next()){
+//				System.out.println(rs.getObject(1));
+//			}
+			costTime=endTime-startTime;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return Status.FAILED(-1);
+		}finally{
+			closeStatement(statement);
+			closeConnection(conn);
+		}
+		return Status.OK(costTime, 1);
 	}
-
+    public static void main(String[] args) {
+		DBAdapter adapter=new IotdbAdapter();
+		TsQuery query=new TsQuery();
+		query.setQueryType(1);
+		query.setDeviceName("d_1");
+		query.setSensorName("s_49");
+		query.setAggreType(2);
+		query.setStartTimestamp(System.currentTimeMillis()-10000000L);
+		query.setEndTimestamp(System.currentTimeMillis());
+		query.setGroupByUnit(3);
+		Object preQuery = adapter.preQuery(query);
+		System.out.println(preQuery);
+	}
 }
