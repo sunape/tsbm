@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import com.alibaba.fastjson.JSON;
 
@@ -15,7 +16,6 @@ import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
 import cn.edu.ruc.db.Status;
-import cn.edu.ruc.db.influxdb.HttpPoolManager;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,11 +30,19 @@ public class OpentsdbAdapter implements DBAdapter {
 	private static String DEViCE_TAG="d";
 	private static String SENSOR_TAG="s";
 	MediaType MEDIA_TYPE_TEXT = MediaType.parse("text/plain");
+	private static final OkHttpClient OK_HTTP_CLIENT = new OkHttpClient().newBuilder()
+		       .readTimeout(500000, TimeUnit.MILLISECONDS)
+		       .connectTimeout(500000, TimeUnit.MILLISECONDS)
+		       .writeTimeout(500000, TimeUnit.MILLISECONDS)
+		       .build();
+	public static OkHttpClient getOkHttpClient(){
+		return OK_HTTP_CLIENT;
+	}
 	@Override
 	public void initDataSource(TsDataSource ds,TsParamConfig tspc) {
-    	URL = String.format(URL,ds.getIp(),ds.getPort());
-    	PUT_URL=URL+PUT_URL;
-    	QUERY_URL=URL+QUERY_URL;
+	    	URL = String.format(URL,ds.getIp(),ds.getPort());
+	    	PUT_URL=URL+PUT_URL;
+	    	QUERY_URL=URL+QUERY_URL;
 	}
 
 	@Override
@@ -149,7 +157,7 @@ public class OpentsdbAdapter implements DBAdapter {
 	private Status exeOkHttpRequest(Request request) {
 		long costTime = 0L;
 	    Response response;
-	    OkHttpClient client = HttpPoolManager.getOkHttpClient();
+	    OkHttpClient client = getOkHttpClient();
 		try {
 			long startTime1=System.nanoTime();
 			response = client.newCall(request).execute();
