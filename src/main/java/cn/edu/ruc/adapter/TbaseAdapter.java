@@ -181,7 +181,7 @@ public class TbaseAdapter implements DBAdapter {
 			//JDBC
 			conn= (Connection) DriverManager.getConnection(JDBC_URL);
 			statement = conn.createStatement();
-			statement.execute(createMetricUrl);
+			statement.executeUpdate(createMetricUrl);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
