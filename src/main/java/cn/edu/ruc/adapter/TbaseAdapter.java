@@ -1,6 +1,5 @@
 package cn.edu.ruc.adapter;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -8,9 +7,6 @@ import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsPackage;
@@ -255,12 +251,15 @@ public class TbaseAdapter implements DBAdapter {
 
 	@Override
 	public Status execWrite(Object write) {
-//	    Request request = new Request.Builder()
-//	            .url(SQL_URL)
-//	            .post(RequestBody.create(MEDIA_TYPE_TEXT, write.toString()))
-//	            .header("Authorization", "Bearer "+TOKEN)
-//	            .build();
-//	    System.out.println(write);
+//		LinkedList<String> lls=(LinkedList<String>) write;
+//		for(String sql:lls) {
+//			Request request = new Request.Builder()
+//					.url(SQL_URL)
+//					.post(RequestBody.create(MEDIA_TYPE_TEXT, write.toString()))
+//					.header("Authorization", "Bearer "+TOKEN)
+//					.build();
+//			Status exeOkHttpRequest = exeOkHttpRequest(request);
+//		}
 //		return exeOkHttpRequest(request);
 		Connection conn = getConnection();
 		Statement statement =null;
@@ -270,7 +269,6 @@ public class TbaseAdapter implements DBAdapter {
 			LinkedList<String> lls=(LinkedList<String>) write;
 			long start = System.nanoTime();
 			for(String sql:lls) {
-				System.out.println(sql);
 				statement.executeUpdate(sql);
 //				statement.executeBatch();
 			}
