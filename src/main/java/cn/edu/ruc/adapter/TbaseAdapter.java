@@ -201,11 +201,12 @@ public class TbaseAdapter implements DBAdapter {
 								String createTableSql=String.format("create table %s.%s_%s using sensor tags('%s','%s');"
 										,DB_NAME,deviceCode,sensorCode,deviceCode,sensorCode);
 								//JDBC
-								statement.addBatch(createTableSql);
+								statement.executeUpdate(createTableSql);
+//								statement.addBatch(createTableSql);
 				}
 			}
-			statement.executeBatch();
-			statement.clearBatch();
+//			statement.executeBatch();
+//			statement.clearBatch();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
