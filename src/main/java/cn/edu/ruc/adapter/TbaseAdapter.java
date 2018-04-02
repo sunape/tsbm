@@ -212,11 +212,6 @@ public class TbaseAdapter implements DBAdapter {
 		}
 		closeStatement(statement);
 		closeConnection(conn);
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -263,14 +258,15 @@ public class TbaseAdapter implements DBAdapter {
 		try {
 			statement = conn.createStatement();
 			LinkedList<String> lls=(LinkedList<String>) write;
-			for(String sql:lls) {
-				statement.addBatch(sql);
-			}
 			long start = System.nanoTime();
-			statement.executeBatch();
+			for(String sql:lls) {
+				statement.executeUpdate(sql);
+//				statement.executeBatch();
+			}
+//			statement.executeBatch();
 			long end = System.nanoTime();
 			costTime=end-start;
-			statement.clearBatch();
+//			statement.clearBatch();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
