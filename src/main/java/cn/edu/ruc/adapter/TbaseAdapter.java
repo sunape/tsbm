@@ -68,40 +68,40 @@ public class TbaseAdapter implements DBAdapter {
 		LOGIN_URL = URL +String.format(LOGIN_URL,ds.getUser(),ds.getPasswd());
 		SQL_URL = URL +String.format(SQL_URL, DB_NAME);
 		//初始化token
-	    Request request = null;
-	    		
-	    OkHttpClient client = getOkHttpClient();
-	    try {
-		   request= 	new Request.Builder()
-	            .url(LOGIN_URL)
-	            .post(RequestBody.create(MEDIA_TYPE_TEXT, ""))
-	            .build();
-			Response response = client.newCall(request).execute();
-			String string = response.body().string();
-			JSONObject obj = JSON.parseObject(string);
-			TOKEN=obj.getString("desc");
-			response.close();
-			
-			//JDBC
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//	    Request request = null;
+//	    		
+//	    OkHttpClient client = getOkHttpClient();
+//	    try {
+//		   request= 	new Request.Builder()
+//	            .url(LOGIN_URL)
+//	            .post(RequestBody.create(MEDIA_TYPE_TEXT, ""))
+//	            .build();
+//			Response response = client.newCall(request).execute();
+//			String string = response.body().string();
+//			JSONObject obj = JSON.parseObject(string);
+//			TOKEN=obj.getString("desc");
+//			response.close();
+//			
+//			//JDBC
+//			
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	    // 创建database
-	    String createDataBaseUrl = String.format("create database %s",DB_NAME);
-	    try {
-		    	request= new Request.Builder()
-		    			.url(SQL_URL)
-		    			.post(RequestBody.create(MEDIA_TYPE_TEXT, createDataBaseUrl))
-		    			.header("Authorization", "Bearer "+TOKEN)
-		    			.build();
-		    	Response response = client.newCall(request).execute();
-		    	response.code();
-		    	response.close();
-		    	//JDBC
-		    } catch (Exception e) {
-		    	e.printStackTrace();
-	    }
+//	    String createDataBaseUrl = String.format("create database %s",DB_NAME);
+//	    try {
+//		    	request= new Request.Builder()
+//		    			.url(SQL_URL)
+//		    			.post(RequestBody.create(MEDIA_TYPE_TEXT, createDataBaseUrl))
+//		    			.header("Authorization", "Bearer "+TOKEN)
+//		    			.build();
+//		    	Response response = client.newCall(request).execute();
+//		    	response.code();
+//		    	response.close();
+//		    	//JDBC
+//		    } catch (Exception e) {
+//		    	e.printStackTrace();
+//	    }
 //	    try {
 //		    	String createTableSql=String.format("create table %s.sensor (ts timestamp,value double,%s binary(128),%s binary(128))"
 //		    			,DB_NAME,DEViCE_TAG,SENSOR_TAG);
@@ -216,31 +216,61 @@ public class TbaseAdapter implements DBAdapter {
 	@Override
 	public Object preWrite(TsWrite tsWrite) {
 		LinkedList<TsPackage> pkgs = tsWrite.getPkgs();
-		StringBuffer sc=new StringBuffer();
-		String preSql="insert into "+DB_NAME+".sensor";
-		String pattern=",values(%s,%s,'%s','%s')";
-		sc.append(preSql);
+//		StringBuffer sc=new StringBuffer();
+//		String preSql="insert into "+DB_NAME+".sensor";
+//		String pattern=",values(%s,%s,'%s','%s')";
+//		sc.append(preSql);
+//		for(TsPackage pkg:pkgs) {
+//			String deviceCode = pkg.getDeviceCode();
+//			long timestamp = pkg.getTimestamp();
+//			Set<String> sensorCodes = pkg.getSensorCodes();
+//			for(String sensorCode:sensorCodes) {
+//				Object value = pkg.getValue(sensorCode);
+//				sc.append(String.format(pattern,timestamp,value,deviceCode,sensorCode ));
+//			}
+//		}
+//		return sc.toString().replaceFirst(","," ");
+		LinkedList<String> lls=new LinkedList<>();
+		String formatSql="insert into %s.%s_%s values(%s,%s)";
 		for(TsPackage pkg:pkgs) {
 			String deviceCode = pkg.getDeviceCode();
-			long timestamp = pkg.getTimestamp();
 			Set<String> sensorCodes = pkg.getSensorCodes();
 			for(String sensorCode:sensorCodes) {
-				Object value = pkg.getValue(sensorCode);
-				sc.append(String.format(pattern,timestamp,value,deviceCode,sensorCode ));
+				lls.add(String.format(formatSql, DB_NAME,deviceCode,sensorCode,pkg.getTimestamp(),pkg.getValue(sensorCode)));
 			}
 		}
-		return sc.toString().replaceFirst(","," ");
+		return lls;
 	}
 
 	@Override
 	public Status execWrite(Object write) {
-	    Request request = new Request.Builder()
-	            .url(SQL_URL)
-	            .post(RequestBody.create(MEDIA_TYPE_TEXT, write.toString()))
-	            .header("Authorization", "Bearer "+TOKEN)
-	            .build();
-	    System.out.println(write);
-		return exeOkHttpRequest(request);
+//	    Request request = new Request.Builder()
+//	            .url(SQL_URL)
+//	            .post(RequestBody.create(MEDIA_TYPE_TEXT, write.toString()))
+//	            .header("Authorization", "Bearer "+TOKEN)
+//	            .build();
+//	    System.out.println(write);
+//		return exeOkHttpRequest(request);
+		Connection conn = getConnection();
+		Statement statement =null;
+		long costTime=0L;
+		try {
+			statement = conn.createStatement();
+			LinkedList<String> lls=(LinkedList<String>) write;
+			for(String sql:lls) {
+				statement.addBatch(sql);
+			}
+			long start = System.nanoTime();
+			statement.executeBatch();
+			long end = System.nanoTime();
+			costTime=end-start;
+			statement.clearBatch();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		closeStatement(statement);
+		closeConnection(conn);
+		return Status.OK(costTime);
 	}
 
 	@Override
@@ -288,5 +318,14 @@ public class TbaseAdapter implements DBAdapter {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+	private  Connection getConnection(){
+		Connection connection=null;
+		 try {
+			connection = DriverManager.getConnection(JDBC_URL);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		 return connection;
 	}
 }
