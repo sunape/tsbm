@@ -198,8 +198,8 @@ public class TbaseAdapter implements DBAdapter {
 						for(int sn=0;sn<sensorNum;sn++) {
 							String sensorCode = "s_"+sn;
 							// 创建表
-								String createTableSql=String.format("create table %s_%s using sensor tags('%s','%s');"
-										,deviceCode,sensorCode,deviceCode,sensorCode);
+								String createTableSql=String.format("create table %s.%s_%s using sensor tags('%s','%s');"
+										,DB_NAME,deviceCode,sensorCode,deviceCode,sensorCode);
 								//JDBC
 								statement.addBatch(createTableSql);
 				}
@@ -211,6 +211,11 @@ public class TbaseAdapter implements DBAdapter {
 		}
 		closeStatement(statement);
 		closeConnection(conn);
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
