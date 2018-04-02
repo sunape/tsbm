@@ -172,9 +172,21 @@ public class TbaseAdapter implements DBAdapter {
 //	e.printStackTrace();
 //}
 //		 创建metric JDBC
-		String createMetricUrl = String.format("create table %s.%s(ts timestamp,value double)"
-		    		+ " tags(%s binary(20),%s binary(20)))"
-		    		,DB_NAME,METRIC,DEViCE_TAG,SENSOR_TAG);
+		int deviceNum = tspc.getDeviceNum();
+		int sensorNum = tspc.getSensorNum();
+		StringBuffer fieldAttrs=new StringBuffer();
+		fieldAttrs.append("ts timestamp");
+		for(int column=0;column<sensorNum;column++) {
+			if(column!=0) {
+			}
+			fieldAttrs.append(",");
+			fieldAttrs.append("s_");
+			fieldAttrs.append(column);
+			fieldAttrs.append(" double");
+		}
+		String createMetricUrl = String.format("create table %s.%s(%s)"
+	    		+ " tags(%s binary(20))"
+	    		,DB_NAME,METRIC,fieldAttrs.toString(),DEViCE_TAG);
 		Connection conn=null;
 		Statement statement=null;
 		try {
@@ -188,25 +200,15 @@ public class TbaseAdapter implements DBAdapter {
 	    closeStatement(statement);
 	    closeConnection(conn);
 	    
-		int deviceNum = tspc.getDeviceNum();
-		int sensorNum = tspc.getSensorNum();
 		try {
 			conn= (Connection) DriverManager.getConnection(JDBC_URL);
 			statement = conn.createStatement();
 				for(int dn=0;dn<deviceNum;dn++) {
 						String deviceCode="d_"+dn;
-						for(int sn=0;sn<sensorNum;sn++) {
-							String sensorCode = "s_"+sn;
-							// 创建表
-								String createTableSql=String.format("create table %s.%s_%s using sensor tags('%s','%s');"
-										,DB_NAME,deviceCode,sensorCode,deviceCode,sensorCode);
-								//JDBC
-								statement.executeUpdate(createTableSql);
-//								statement.addBatch(createTableSql);
-				}
+						String createTableSql=String.format("create table %s.%s using sensor tags('%s');"
+								,DB_NAME,deviceCode,deviceCode);
+						statement.executeUpdate(createTableSql);
 			}
-//			statement.executeBatch();
-//			statement.clearBatch();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -232,13 +234,21 @@ public class TbaseAdapter implements DBAdapter {
 //		}
 //		return sc.toString().replaceFirst(","," ");
 		LinkedList<String> lls=new LinkedList<>();
-		String formatSql="insert into %s.%s_%s values(%s,%s)";
+		String formatSql="insert into %s.%s(%s) values(%s)";
 		for(TsPackage pkg:pkgs) {
+			StringBuffer fields=new StringBuffer();
+			fields.append("ts");
+			StringBuffer values=new StringBuffer();
+			values.append(pkg.getTimestamp());
 			String deviceCode = pkg.getDeviceCode();
 			Set<String> sensorCodes = pkg.getSensorCodes();
 			for(String sensorCode:sensorCodes) {
-				lls.add(String.format(formatSql, DB_NAME,deviceCode,sensorCode,pkg.getTimestamp(),pkg.getValue(sensorCode)));
+				fields.append(",");
+				values.append(",");
+				fields.append(sensorCode);
+				values.append(pkg.getValue(sensorCode));
 			}
+			lls.add(String.format(formatSql, DB_NAME,deviceCode,fields.toString(),values.toString()));
 		}
 		return lls;
 	}
