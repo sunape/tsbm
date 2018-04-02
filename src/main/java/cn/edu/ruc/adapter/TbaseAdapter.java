@@ -234,21 +234,21 @@ public class TbaseAdapter implements DBAdapter {
 //		}
 //		return sc.toString().replaceFirst(","," ");
 		LinkedList<String> lls=new LinkedList<>();
-		String formatSql="insert into %s.%s(%s) values(%s)";
+		String formatSql="insert into %s.%s values(%s)";
 		for(TsPackage pkg:pkgs) {
-			StringBuffer fields=new StringBuffer();
-			fields.append("ts");
+//			StringBuffer fields=new StringBuffer();
+//			fields.append("ts");
 			StringBuffer values=new StringBuffer();
 			values.append(pkg.getTimestamp());
 			String deviceCode = pkg.getDeviceCode();
 			Set<String> sensorCodes = pkg.getSensorCodes();
 			for(String sensorCode:sensorCodes) {
-				fields.append(",");
+//				fields.append(",");
 				values.append(",");
-				fields.append(sensorCode);
+//				fields.append(sensorCode);
 				values.append(pkg.getValue(sensorCode));
 			}
-			lls.add(String.format(formatSql, DB_NAME,deviceCode,fields.toString(),values.toString()));
+			lls.add(String.format(formatSql, DB_NAME,deviceCode,values.toString()));
 		}
 		return lls;
 	}
