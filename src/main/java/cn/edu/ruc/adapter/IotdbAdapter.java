@@ -55,8 +55,11 @@ public class IotdbAdapter implements DBAdapter {
 		try {
 		    connection = getConnection();
 		    statement = connection.createStatement();
-		    String setStorageSql="SET STORAGE GROUP TO "+ROOT_SERIES_NAME;
-		    statement.execute(setStorageSql);
+		    try {
+			    	String setStorageSql="SET STORAGE GROUP TO "+ROOT_SERIES_NAME;
+			    	statement.execute(setStorageSql);
+			} catch (Exception e) {
+				e.printStackTrace();			}
 		    for(int deviceIdx=0;deviceIdx<deviceNum;deviceIdx++) {
 		    		String deviceCode="d_"+deviceIdx;
 		    		for(int sensorIdx=0;sensorIdx<sensorNum;sensorIdx++) {
