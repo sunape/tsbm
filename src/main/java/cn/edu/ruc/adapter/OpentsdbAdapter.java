@@ -58,6 +58,7 @@ public class OpentsdbAdapter implements DBAdapter {
 				Map<String,Object> mapTags=new HashMap<>();
 				mapTags.put(DEViCE_TAG,deviceCode);
 				mapTags.put(SENSOR_TAG, sensorCode);
+				pointMap.put("metric", METRIC);
 				pointMap.put("timestamp", timestamp);
 				pointMap.put("value",tpk.getValue(sensorCode));
 				pointMap.put("tags", mapTags);
