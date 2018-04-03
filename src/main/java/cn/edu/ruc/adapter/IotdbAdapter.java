@@ -130,7 +130,6 @@ public class IotdbAdapter implements DBAdapter {
 			valueBuffer.append(")");
 			sqlBuffer.append(valueBuffer);
 			sqls.add(sqlBuffer.toString());
-			System.out.println(sqlBuffer.toString());
 			sqlBuffer.setLength(0);
 		}
 		return sqls;
