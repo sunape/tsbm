@@ -61,7 +61,7 @@ public class IotdbAdapter implements DBAdapter {
 		    		String deviceCode="d_"+deviceIdx;
 		    		for(int sensorIdx=0;sensorIdx<sensorNum;sensorIdx++) {
 		    			String sensorCode="s_"+sensorIdx;
-		    			String sql="CREATE TIMESERIES "+ROOT_SERIES_NAME+"."+deviceCode+"."+sensorCode+"  s";
+		    			String sql="CREATE TIMESERIES "+ROOT_SERIES_NAME+"."+deviceCode+"."+sensorCode+"  WITH DATATYPE=FLOAT, ENCODING=RLE";
 		    			statement.addBatch(sql);
 		    		}
 		    }
