@@ -95,10 +95,12 @@ public class CoreBiz {
 			long bizCost=bizEndTime-bizStartTime;
 			int pps=(int) (sumNum/(bizCost/Math.pow(10.0, 3)));
 			sumPoints+=sumNum;
-			LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}]",
+			//记录日志
+			result=generateWriteResult(timeoutList,ppsList);
+			LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}],timeout(us)[max:{},min:{},95:{},50:{},mean:{}]",
 					(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
 					(tsParamConfig.getEndTime()-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
-					pps,sumNum,sumPoints);
+					pps,sumNum,sumPoints,result.getMaxTimeout(),result.getMinTimeout(),result.getNinty5Timeout(),result.getFiftyTimeout(),result.getMeanTimeout());
 			ppsList.add(pps);
 			currentTime+=tsParamConfig.getStep()*tsParamConfig.getCacheTimes();
 			if(bizCost<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
