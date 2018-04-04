@@ -64,6 +64,8 @@ public class CoreBiz {
 		long programStartTime=System.currentTimeMillis();
 		List<Long> timeoutList=new ArrayList<>();
 		List<Integer> ppsList=new ArrayList<>();
+		long sumPoints=0L;
+		int count=0;
 		while(currentTime<endTime) {
 			//设备数，客户端数，传感器数，开始时间，结束时间，
 			LinkedList<TsWrite> pkgs = generatePkg(currentTime);
@@ -93,10 +95,22 @@ public class CoreBiz {
 			long bizEndTime=System.currentTimeMillis();
 			long bizCost=bizEndTime-bizStartTime;
 			int pps=(int) (sumNum/(bizCost/Math.pow(10.0, 3)));
-			LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{}]",
-					(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
-					(tsParamConfig.getEndTime()-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
-					pps,sumNum);
+			sumPoints+=sumNum;
+			//记录日志
+			count++;
+			if(count%100==0) {
+				result=generateWriteResult(timeoutList,ppsList);
+				LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}],timeout(us)[max:{},min:{},95:{},50:{},mean:{}]",
+						(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
+						(tsParamConfig.getEndTime()-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
+						pps,sumNum,sumPoints,result.getMaxTimeout(),result.getMinTimeout(),result.getNinty5Timeout(),result.getFiftyTimeout(),result.getMeanTimeout());
+			}else {
+				LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}]",
+						(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
+						(tsParamConfig.getEndTime()-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
+						pps,sumNum,sumPoints);
+
+			}
 			ppsList.add(pps);
 			currentTime+=tsParamConfig.getStep()*tsParamConfig.getCacheTimes();
 			if(bizCost<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
@@ -108,6 +122,7 @@ public class CoreBiz {
 		result=generateWriteResult(timeoutList,ppsList);
 		result.setStartTime(programStartTime);
 		result.setEndTime(System.currentTimeMillis());
+		result.setSumPoints(sumPoints);
 		return result;
 	}
 	private TsWriteResult generateWriteResult(List<Long> timeoutList, List<Integer> ppsList) {
