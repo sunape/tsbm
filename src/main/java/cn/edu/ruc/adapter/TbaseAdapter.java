@@ -187,6 +187,7 @@ public class TbaseAdapter implements DBAdapter {
 		Statement statement=null;
 		try {
 			//JDBC
+			System.out.println(createMetricUrl);
 			conn= (Connection) DriverManager.getConnection(JDBC_URL);
 			statement = conn.createStatement();
 			statement.executeUpdate(createMetricUrl);
@@ -195,7 +196,7 @@ public class TbaseAdapter implements DBAdapter {
 		}
 	    closeStatement(statement);
 	    closeConnection(conn);
-	    
+	    System.out.println(createMetricUrl);
 		try {
 			conn= (Connection) DriverManager.getConnection(JDBC_URL);
 			statement = conn.createStatement();
@@ -203,6 +204,7 @@ public class TbaseAdapter implements DBAdapter {
 						String deviceCode="d_"+dn;
 						String createTableSql=String.format("create table %s.%s using sensor tags('%s');"
 								,DB_NAME,deviceCode,deviceCode);
+						System.out.println(createTableSql);
 						statement.executeUpdate(createTableSql);
 			}
 		} catch (Exception e) {
@@ -210,6 +212,11 @@ public class TbaseAdapter implements DBAdapter {
 		}
 		closeStatement(statement);
 		closeConnection(conn);
+		try {
+			Thread.sleep(2000L);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
