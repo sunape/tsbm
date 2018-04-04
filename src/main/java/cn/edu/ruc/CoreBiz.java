@@ -113,7 +113,8 @@ public class CoreBiz {
 			}
 			ppsList.add(pps);
 			currentTime+=tsParamConfig.getStep()*tsParamConfig.getCacheTimes();
-			if(bizCost<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
+			long costTime = System.currentTimeMillis()-bizStartTime;
+			if(costTime<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
 				Thread.sleep(tsParamConfig.getWritePulse()-bizCost);
 			}
 		}
