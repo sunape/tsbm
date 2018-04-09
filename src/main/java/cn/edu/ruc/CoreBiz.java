@@ -75,6 +75,11 @@ public class CoreBiz {
 				cs.submit(new Callable<Status>() {
 					@Override
 					public Status call() throws Exception {
+						if(tsParamConfig.getBackgroupStatus().equals(1)) {
+							int sleepTime = random.nextInt(tsParamConfig.getStep().intValue());
+							Thread.sleep(sleepTime);
+//							LOGGER.info("sleep time "+sleepTime+" ms");
+						}
 						Status status = execWrite(dbAdapter, tsWrite);
 						if(status.isOK()) {
 							return Status.OK(status.getCostTime(), tsWrite.getPointsNum());
@@ -113,7 +118,8 @@ public class CoreBiz {
 			}
 			ppsList.add(pps);
 			currentTime+=tsParamConfig.getStep()*tsParamConfig.getCacheTimes();
-			if(bizCost<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
+			long costTime = System.currentTimeMillis()-bizStartTime;
+			if(costTime<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
 				Thread.sleep(tsParamConfig.getWritePulse()-bizCost);
 			}
 		}
@@ -214,6 +220,11 @@ public class CoreBiz {
 			cs.submit(new Callable<Long[]>() {
 				@Override
 				public Long[] call() throws Exception {
+					if(tsParamConfig.getBackgroupStatus().equals(1)) {
+						int sleepTime = random.nextInt((int)tsParamConfig.getReadPulse());
+						Thread.sleep(sleepTime);
+//						LOGGER.info("sleep time "+sleepTime+" ms");
+					}
 					Long[] results=new Long[2];
 					results[0]=0L;
 					results[1]=0L;
