@@ -75,6 +75,11 @@ public class CoreBiz {
 				cs.submit(new Callable<Status>() {
 					@Override
 					public Status call() throws Exception {
+						if(tsParamConfig.getBackgroupStatus().equals(1)) {
+							int sleepTime = random.nextInt(tsParamConfig.getStep().intValue());
+							Thread.sleep(sleepTime);
+//							LOGGER.info("sleep time "+sleepTime+" ms");
+						}
 						Status status = execWrite(dbAdapter, tsWrite);
 						if(status.isOK()) {
 							return Status.OK(status.getCostTime(), tsWrite.getPointsNum());
@@ -215,6 +220,11 @@ public class CoreBiz {
 			cs.submit(new Callable<Long[]>() {
 				@Override
 				public Long[] call() throws Exception {
+					if(tsParamConfig.getBackgroupStatus().equals(1)) {
+						int sleepTime = random.nextInt((int)tsParamConfig.getReadPulse());
+						Thread.sleep(sleepTime);
+//						LOGGER.info("sleep time "+sleepTime+" ms");
+					}
 					Long[] results=new Long[2];
 					results[0]=0L;
 					results[1]=0L;
