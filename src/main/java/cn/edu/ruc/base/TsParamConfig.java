@@ -11,7 +11,8 @@ public class TsParamConfig {
 	private String batchCode;
 	@CfgName(name="TEST_MODE")
 	private String testMode;// read/write
-	
+	@CfgName(name="BACKGROUP_STATUS")
+	private Integer backgroupStatus=0;//负载是否后台为背景负载，主要是为了让负载不是集中到某一点上
 	@CfgName(name="DEVICE_NUM")
 	private int deviceNum=20;
 	@CfgName(name="SENSOR_NUM")
@@ -204,5 +205,11 @@ public class TsParamConfig {
 	}
 	public void setBatchCode(String batchCode) {
 		this.batchCode = batchCode;
+	}
+	public Integer getBackgroupStatus() {
+		return backgroupStatus;
+	}
+	public void setBackgroupStatus(Integer backgroupStatus) {
+		this.backgroupStatus = backgroupStatus;
 	}
 }

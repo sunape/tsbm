@@ -65,6 +65,7 @@ public class CoreBiz {
 		List<Long> timeoutList=new ArrayList<>();
 		List<Integer> ppsList=new ArrayList<>();
 		long sumPoints=0L;
+		int count=0;
 		while(currentTime<endTime) {
 			//设备数，客户端数，传感器数，开始时间，结束时间，
 			LinkedList<TsWrite> pkgs = generatePkg(currentTime);
@@ -74,6 +75,11 @@ public class CoreBiz {
 				cs.submit(new Callable<Status>() {
 					@Override
 					public Status call() throws Exception {
+						if(tsParamConfig.getBackgroupStatus().equals(1)) {
+							int sleepTime = random.nextInt(tsParamConfig.getStep().intValue());
+							Thread.sleep(sleepTime);
+//							LOGGER.info("sleep time "+sleepTime+" ms");
+						}
 						Status status = execWrite(dbAdapter, tsWrite);
 						if(status.isOK()) {
 							return Status.OK(status.getCostTime(), tsWrite.getPointsNum());
@@ -95,13 +101,25 @@ public class CoreBiz {
 			long bizCost=bizEndTime-bizStartTime;
 			int pps=(int) (sumNum/(bizCost/Math.pow(10.0, 3)));
 			sumPoints+=sumNum;
-			LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}]",
-					(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
-					(tsParamConfig.getEndTime()-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
-					pps,sumNum,sumPoints);
+			//记录日志
+			count++;
+			if(count%100==0) {
+				result=generateWriteResult(timeoutList,ppsList);
+				LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}],timeout(us)[max:{},min:{},95:{},50:{},mean:{}]",
+						(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
+						(tsParamConfig.getEndTime()-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
+						pps,sumNum,sumPoints,result.getMaxTimeout(),result.getMinTimeout(),result.getNinty5Timeout(),result.getFiftyTimeout(),result.getMeanTimeout());
+			}else {
+				LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}]",
+						(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
+						(tsParamConfig.getEndTime()-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
+						pps,sumNum,sumPoints);
+
+			}
 			ppsList.add(pps);
 			currentTime+=tsParamConfig.getStep()*tsParamConfig.getCacheTimes();
-			if(bizCost<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
+			long costTime = System.currentTimeMillis()-bizStartTime;
+			if(costTime<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
 				Thread.sleep(tsParamConfig.getWritePulse()-bizCost);
 			}
 		}
@@ -202,6 +220,11 @@ public class CoreBiz {
 			cs.submit(new Callable<Long[]>() {
 				@Override
 				public Long[] call() throws Exception {
+					if(tsParamConfig.getBackgroupStatus().equals(1)) {
+						int sleepTime = random.nextInt((int)tsParamConfig.getReadPulse());
+						Thread.sleep(sleepTime);
+//						LOGGER.info("sleep time "+sleepTime+" ms");
+					}
 					Long[] results=new Long[2];
 					results[0]=0L;
 					results[1]=0L;
