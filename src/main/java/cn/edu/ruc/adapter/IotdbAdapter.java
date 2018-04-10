@@ -42,7 +42,9 @@ public class IotdbAdapter implements DBAdapter {
 		PASSWD=ds.getPasswd();
 		//初始化数据库
 		//初始化存储组
-		initTimeseriesAndStorage(tspc);
+		if(tspc.getTestMode().equals("write")) {
+			initTimeseriesAndStorage(tspc);
+		}
 	}
     /**
      * 初始化时间序列，并设置storage
