@@ -11,12 +11,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.alibaba.druid.pool.DruidDataSource;
+
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsPackage;
 import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
 import cn.edu.ruc.db.Status;
+import cn.edu.ruc.db.iotdb.ConnectionManager;
 /**
  * iotdb 适配器
  * @author fasape
@@ -82,10 +85,10 @@ public class IotdbAdapter implements DBAdapter {
 	private  Connection getConnection(){
 		Connection connection=null;
 		 try {
-			connection = DriverManager.getConnection(URL, USER, PASSWD);
+//			connection = DriverManager.getConnection(URL, USER, PASSWD);
 			 //数据源管理
-//			 connection=ConnectionManager.getConnection();
-		} catch (SQLException e) {
+			 connection=getConnection();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		 return connection;
@@ -93,9 +96,9 @@ public class IotdbAdapter implements DBAdapter {
 	private void closeConnection(Connection conn){
 		try {
 			if(conn!=null){
-				conn.close();
+//				conn.close();
 			}
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -296,4 +299,28 @@ public class IotdbAdapter implements DBAdapter {
 		Object preQuery = adapter.preQuery(query);
 		System.out.println(preQuery);
 	}
+    
+    private static DruidDataSource dataSource;
+    private static DruidDataSource getDataSource(){
+	    	if(dataSource==null){
+	    		synchronized (ConnectionManager.class) {
+	    			if(dataSource==null){
+	    				dataSource = new DruidDataSource();  
+	    				dataSource.setUsername(USER);  
+	    				dataSource.setUrl(URL);  
+	    				dataSource.setPassword(PASSWD);  
+	    				dataSource.setDriverClassName(DRIVER_CLASS);  
+	    				dataSource.setInitialSize(10);  
+	    				dataSource.setMaxActive(200);  
+	    				dataSource.setMaxWait(100);  
+	    				dataSource.setTestWhileIdle(false);  
+	    				dataSource.setTestOnReturn(false);  
+	    				dataSource.setTestOnBorrow(false);  
+	    				dataSource.setDefaultAutoCommit(false);
+	    				dataSource.setDefaultReadOnly(false);
+	    			}
+				}
+	    	}
+	    	return dataSource;
+    }
 }
