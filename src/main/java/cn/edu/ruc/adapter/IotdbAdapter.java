@@ -87,7 +87,7 @@ public class IotdbAdapter implements DBAdapter {
 		 try {
 //			connection = DriverManager.getConnection(URL, USER, PASSWD);
 			 //数据源管理
-			 connection=getConnection();
+			 connection=getDataSource().getConnection();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
