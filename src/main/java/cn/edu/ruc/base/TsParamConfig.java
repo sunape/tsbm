@@ -179,7 +179,7 @@ public class TsParamConfig {
 			setStartTime(0L);
 		}
 		if(getStartTime().equals(-2L)) {
-			setEndTime(System.currentTimeMillis());
+			setStartTime(System.currentTimeMillis());
 		}
 		if(getEndTime().equals(-1L)) {
 			setEndTime(Long.MAX_VALUE);
