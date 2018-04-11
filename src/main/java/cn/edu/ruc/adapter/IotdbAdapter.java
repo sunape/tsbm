@@ -44,6 +44,7 @@ public class IotdbAdapter implements DBAdapter {
 		USER=ds.getUser();
 		PASSWD=ds.getPasswd();
 		//初始化数据库
+		getDataSource();
 		//初始化存储组
 		if(tspc.getTestMode().equals("write")) {
 			initTimeseriesAndStorage(tspc);
@@ -96,7 +97,7 @@ public class IotdbAdapter implements DBAdapter {
 	private void closeConnection(Connection conn){
 		try {
 			if(conn!=null){
-//				conn.close();
+				conn.close();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -303,7 +304,7 @@ public class IotdbAdapter implements DBAdapter {
     private static DruidDataSource dataSource;
     private static DruidDataSource getDataSource(){
 	    	if(dataSource==null){
-	    		synchronized (ConnectionManager.class) {
+	    		synchronized (IotdbAdapter.class) {
 	    			if(dataSource==null){
 	    				dataSource = new DruidDataSource();  
 	    				dataSource.setUsername(USER);  
