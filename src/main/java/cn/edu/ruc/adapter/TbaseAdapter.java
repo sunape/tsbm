@@ -31,6 +31,7 @@ import okhttp3.Response;
 public class TbaseAdapter implements DBAdapter {
 	
 	private static String JDBC_URL="jdbc:TSDB://%s:%s/%s?user=%s&password=%s";
+	private static String JDBC_POOL_URL="jdbc:TSDB://%s:%s/";
 	private static String JDBC_CLASS="com.taosdata.jdbc.TSDBDriver";
 	private static String USER="root";
 	private static String PASSWD="taosdata";
@@ -63,6 +64,7 @@ public class TbaseAdapter implements DBAdapter {
 		}
 		this.tspc=tspc;
 		JDBC_URL=String.format(JDBC_URL,ds.getIp(),ds.getPort(),DB_NAME,ds.getUser(),ds.getPasswd());
+		JDBC_POOL_URL=String.format(JDBC_POOL_URL, ds.getIp(),ds.getPort());
 		PASSWD=ds.getPasswd();
 		USER=ds.getUser();
 		// 初始化参数
@@ -243,7 +245,7 @@ public class TbaseAdapter implements DBAdapter {
 		    			if(dataSource==null){
 		    				dataSource = new DruidDataSource();  
 		    				dataSource.setUsername(USER);  
-		    				dataSource.setUrl(JDBC_URL);  
+		    				dataSource.setUrl(JDBC_POOL_URL);  
 		    				dataSource.setPassword(PASSWD);  
 		    				dataSource.setDriverClassName(JDBC_CLASS);  
 		    				dataSource.setInitialSize(10);  
