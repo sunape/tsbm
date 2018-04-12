@@ -158,7 +158,6 @@ public class TbaseAdapter implements DBAdapter {
 			LinkedList<String> lls=(LinkedList<String>) write;
 			long start = System.nanoTime();
 			for(String sql:lls) {
-				System.out.println(sql);
 				statement.executeUpdate(sql);
 //				statement.executeBatch();
 			}
