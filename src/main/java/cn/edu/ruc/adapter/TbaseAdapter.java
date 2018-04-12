@@ -8,6 +8,8 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.alibaba.druid.pool.DruidDataSource;
+
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsPackage;
 import cn.edu.ruc.base.TsParamConfig;
@@ -30,11 +32,12 @@ public class TbaseAdapter implements DBAdapter {
 	
 	private static String JDBC_URL="jdbc:TSDB://%s:%s/%s?user=%s&password=%s";
 	private static String JDBC_CLASS="com.taosdata.jdbc.TSDBDriver";
-	
+	private static String USER="root";
+	private static String PASSWD="taosdata";
 	private static String URL="http://%s:%s";
 	private static String LOGIN_URL="/rest/login/%s/%s";
 	private static String SQL_URL="/rest/sql/%s";
-	
+	private TsParamConfig tspc;
 	private static  String METRIC="sensor";
 	private static String DEViCE_TAG="d";
 	private static String SENSOR_TAG="s";
@@ -58,11 +61,15 @@ public class TbaseAdapter implements DBAdapter {
 		} catch (ClassNotFoundException e1) {
 			e1.printStackTrace();
 		}
+		this.tspc=tspc;
 		JDBC_URL=String.format(JDBC_URL,ds.getIp(),ds.getPort(),DB_NAME,ds.getUser(),ds.getPasswd());
+		PASSWD=ds.getPasswd();
+		USER=ds.getUser();
 		// 初始化参数
 		URL=String.format(URL,ds.getIp(),ds.getPort());
 		LOGIN_URL = URL +String.format(LOGIN_URL,ds.getUser(),ds.getPasswd());
 		SQL_URL = URL +String.format(SQL_URL, DB_NAME);
+		getDataSource();
 //		 创建metric JDBC
 		int deviceNum = tspc.getDeviceNum();
 		int sensorNum = tspc.getSensorNum();
@@ -222,10 +229,34 @@ public class TbaseAdapter implements DBAdapter {
 	private  Connection getConnection(){
 		Connection connection=null;
 		 try {
-			connection = DriverManager.getConnection(JDBC_URL);
+//			connection = DriverManager.getConnection(JDBC_URL);
+			 connection=getDataSource().getConnection();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		 return connection;
 	}
+	   private  DruidDataSource dataSource;
+	    private  DruidDataSource getDataSource(){
+		    	if(dataSource==null){
+		    		synchronized (IotdbAdapter.class) {
+		    			if(dataSource==null){
+		    				dataSource = new DruidDataSource();  
+		    				dataSource.setUsername(USER);  
+		    				dataSource.setUrl(URL);  
+		    				dataSource.setPassword(PASSWD);  
+		    				dataSource.setDriverClassName(JDBC_CLASS);  
+		    				dataSource.setInitialSize(10);  
+		    				dataSource.setMaxActive(tspc.getWriteClients()+tspc.getReadClients());  
+		    				dataSource.setMaxWait(100);  
+		    				dataSource.setTestWhileIdle(false);  
+		    				dataSource.setTestOnReturn(false);  
+		    				dataSource.setTestOnBorrow(false);  
+		    				dataSource.setDefaultAutoCommit(false);
+		    				dataSource.setDefaultReadOnly(false);
+		    			}
+					}
+		    	}
+		    	return dataSource;
+	    }
 }
