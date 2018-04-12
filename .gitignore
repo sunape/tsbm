@@ -17,11 +17,12 @@
 # intermediately generated locally
 **/logs/
 
-result.json
-*.jar
+result/result.json
+#*.jar
 *.gz
 *.tar.gz
 *.tar
+/lib
 
 /target/
 /perform.db
