@@ -1,7 +1,6 @@
 package cn.edu.ruc.adapter;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -9,7 +8,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.alibaba.druid.pool.DruidDataSource;
 
@@ -19,7 +20,6 @@ import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
 import cn.edu.ruc.db.Status;
-import cn.edu.ruc.db.iotdb.ConnectionManager;
 /**
  * iotdb 适配器
  * @author fasape
@@ -31,9 +31,12 @@ public class IotdbAdapter implements DBAdapter {
 	private static String USER ="";
 	private static String PASSWD ="";
 	private static final String ROOT_SERIES_NAME="root.perform";
+	private Logger logger=LoggerFactory.getLogger(getClass());
+	private TsParamConfig tspc=null;
 	@Override
 	public void initDataSource(TsDataSource ds,TsParamConfig tspc) {
 		// TODO Auto-generated method stub
+		this.tspc=tspc;
 		//初始化连接
 		try {
 			Class.forName(DRIVER_CLASS);
@@ -73,9 +76,10 @@ public class IotdbAdapter implements DBAdapter {
 		    			String sql="CREATE TIMESERIES "+ROOT_SERIES_NAME+"."+deviceCode+"."+sensorCode+"  WITH DATATYPE=FLOAT, ENCODING=RLE";
 		    			statement.addBatch(sql);
 		    		}
+		    		statement.executeBatch();
+		    		statement.clearBatch();
+		    		logger.info("{} create timeseries finished[{}/{}].",deviceCode,deviceIdx+1,deviceNum);
 		    }
-		    statement.executeBatch();
-		    statement.clearBatch();
 		  } catch (Exception e) {
 			  e.printStackTrace();
 		  } finally {
@@ -190,7 +194,7 @@ public class IotdbAdapter implements DBAdapter {
 				sc.append("min_value(");
 			}
 			if(tsQuery.getAggreType()==3) {
-				sc.append("avg_value(");
+				sc.append("mean(");
 			}
 			if(tsQuery.getAggreType()==4) {
 				sc.append("count(");
@@ -274,7 +278,7 @@ public class IotdbAdapter implements DBAdapter {
 			long startTime=System.nanoTime();
 			ResultSet rs = statement.executeQuery(query.toString());
 			long endTime=System.nanoTime();
-//			while(rs.next()){
+//			if(rs.next()){
 //				System.out.println(rs.getObject(1));
 //			}
 			costTime=endTime-startTime;
@@ -301,8 +305,8 @@ public class IotdbAdapter implements DBAdapter {
 		System.out.println(preQuery);
 	}
     
-    private static DruidDataSource dataSource;
-    private static DruidDataSource getDataSource(){
+    private  DruidDataSource dataSource;
+    private  DruidDataSource getDataSource(){
 	    	if(dataSource==null){
 	    		synchronized (IotdbAdapter.class) {
 	    			if(dataSource==null){
@@ -312,7 +316,7 @@ public class IotdbAdapter implements DBAdapter {
 	    				dataSource.setPassword(PASSWD);  
 	    				dataSource.setDriverClassName(DRIVER_CLASS);  
 	    				dataSource.setInitialSize(10);  
-	    				dataSource.setMaxActive(200);  
+	    				dataSource.setMaxActive(tspc.getWriteClients()+tspc.getReadClients());  
 	    				dataSource.setMaxWait(100);  
 	    				dataSource.setTestWhileIdle(false);  
 	    				dataSource.setTestOnReturn(false);  
