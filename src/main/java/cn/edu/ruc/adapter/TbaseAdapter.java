@@ -63,110 +63,6 @@ public class TbaseAdapter implements DBAdapter {
 		URL=String.format(URL,ds.getIp(),ds.getPort());
 		LOGIN_URL = URL +String.format(LOGIN_URL,ds.getUser(),ds.getPasswd());
 		SQL_URL = URL +String.format(SQL_URL, DB_NAME);
-		//初始化token
-//	    Request request = null;
-//	    		
-//	    OkHttpClient client = getOkHttpClient();
-//	    try {
-//		   request= 	new Request.Builder()
-//	            .url(LOGIN_URL)
-//	            .post(RequestBody.create(MEDIA_TYPE_TEXT, ""))
-//	            .build();
-//			Response response = client.newCall(request).execute();
-//			String string = response.body().string();
-//			JSONObject obj = JSON.parseObject(string);
-//			TOKEN=obj.getString("desc");
-//			response.close();
-//			
-//			//JDBC
-//			
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-	    // 创建database
-//	    String createDataBaseUrl = String.format("create database %s",DB_NAME);
-//	    try {
-//		    	request= new Request.Builder()
-//		    			.url(SQL_URL)
-//		    			.post(RequestBody.create(MEDIA_TYPE_TEXT, createDataBaseUrl))
-//		    			.header("Authorization", "Bearer "+TOKEN)
-//		    			.build();
-//		    	Response response = client.newCall(request).execute();
-//		    	response.code();
-//		    	response.close();
-//		    	//JDBC
-//		    } catch (Exception e) {
-//		    	e.printStackTrace();
-//	    }
-//	    try {
-//		    	String createTableSql=String.format("create table %s.sensor (ts timestamp,value double,%s binary(128),%s binary(128))"
-//		    			,DB_NAME,DEViCE_TAG,SENSOR_TAG);
-//		    	request= new Request.Builder()
-//		    			.url(SQL_URL)
-//		    			.post(RequestBody.create(MEDIA_TYPE_TEXT, createTableSql))
-//		    			.header("Authorization", "Bearer "+TOKEN)
-//		    			.build();
-//		    	Response response = client.newCall(request).execute();
-//		    	System.out.println(response.body().string());
-//		    	response.code();
-//		    	response.close();
-//	    } catch (Exception e) {
-//	    	e.printStackTrace();
-//	    }
-		// 创建metric
-//	    String createMetricUrl = String.format("create table %s.%s(ts timestamp,value double)"
-//		    		+ " tags(%s binary(20),%s binary(20)))"
-//		    		,DB_NAME,METRIC,DEViCE_TAG,SENSOR_TAG);
-//	    try {
-//		    	request= new Request.Builder()
-//		    			.url(SQL_URL)
-//		    			.post(RequestBody.create(MEDIA_TYPE_TEXT, createMetricUrl))
-//		    			.header("Authorization", "Bearer "+TOKEN)
-//		    			.build();
-//		    	Response response = client.newCall(request).execute();
-//		    	response.code();
-//		    	response.close();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//	    int deviceNum = tspc.getDeviceNum();
-//	    int sensorNum = tspc.getSensorNum();
-//	    for(int dn=0;dn<deviceNum;dn++) {
-//	    		String deviceCode="d_"+dn;
-//	    		for(int sn=0;sn<sensorNum;sn++) {
-//	    			String sensorCode = "s_"+sn;
-//	    			// 创建表
-//	    			try {
-//	    				String createTableSql=String.format("create table %s_%s using sensor tags('%s','%s');"
-//	    						,deviceCode,sensorCode,deviceCode,sensorCode);
-//	    				request= new Request.Builder()
-//	    				.url(SQL_URL)
-//	    				.post(RequestBody.create(MEDIA_TYPE_TEXT, createTableSql))
-//	    				.header("Authorization", "Bearer "+TOKEN)
-//	    				.build();
-//	    				Response response = client.newCall(request).execute();
-//	    				response.code();
-//	    				response.close();
-//	    			} catch (Exception e) {
-//	    				e.printStackTrace();
-//	    			}
-//	    		}
-//	    }
-//	    try {
-//    	String createTableSql=String.format("create table %s.sensor (ts timestamp,value double,%s binary(128),%s binary(128))"
-//    			,DB_NAME,DEViCE_TAG,SENSOR_TAG);
-//    	request= new Request.Builder()
-//    			.url(SQL_URL)
-//    			.post(RequestBody.create(MEDIA_TYPE_TEXT, createTableSql))
-//    			.header("Authorization", "Bearer "+TOKEN)
-//    			.build();
-//    	Response response = client.newCall(request).execute();
-//    	System.out.println(response.body().string());
-//    	response.code();
-//    	response.close();
-//} catch (Exception e) {
-//	e.printStackTrace();
-//}
 //		 创建metric JDBC
 		int deviceNum = tspc.getDeviceNum();
 		int sensorNum = tspc.getSensorNum();
@@ -188,7 +84,7 @@ public class TbaseAdapter implements DBAdapter {
 		try {
 			//JDBC
 			System.out.println(createMetricUrl);
-			conn= (Connection) DriverManager.getConnection(JDBC_URL);
+			conn= getConnection();
 			statement = conn.createStatement();
 			statement.executeUpdate(createMetricUrl);
 		} catch (Exception e) {
@@ -198,7 +94,7 @@ public class TbaseAdapter implements DBAdapter {
 	    closeConnection(conn);
 	    System.out.println(createMetricUrl);
 		try {
-			conn= (Connection) DriverManager.getConnection(JDBC_URL);
+			conn= getConnection();
 			statement = conn.createStatement();
 				for(int dn=0;dn<deviceNum;dn++) {
 						String deviceCode="d_"+dn;
@@ -222,20 +118,6 @@ public class TbaseAdapter implements DBAdapter {
 	@Override
 	public Object preWrite(TsWrite tsWrite) {
 		LinkedList<TsPackage> pkgs = tsWrite.getPkgs();
-//		StringBuffer sc=new StringBuffer();
-//		String preSql="insert into "+DB_NAME+".sensor";
-//		String pattern=",values(%s,%s,'%s','%s')";
-//		sc.append(preSql);
-//		for(TsPackage pkg:pkgs) {
-//			String deviceCode = pkg.getDeviceCode();
-//			long timestamp = pkg.getTimestamp();
-//			Set<String> sensorCodes = pkg.getSensorCodes();
-//			for(String sensorCode:sensorCodes) {
-//				Object value = pkg.getValue(sensorCode);
-//				sc.append(String.format(pattern,timestamp,value,deviceCode,sensorCode ));
-//			}
-//		}
-//		return sc.toString().replaceFirst(","," ");
 		LinkedList<String> lls=new LinkedList<>();
 		String formatSql="insert into %s.%s values(%s)";
 		for(TsPackage pkg:pkgs) {
