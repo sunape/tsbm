@@ -7,7 +7,6 @@ import cn.edu.ruc.cmd.CfgName;
  * @author fasape
  */
 public class TsParamConfig {
-	@CfgName(name="BATCH_CODE")
 	private String batchCode;
 	@CfgName(name="TEST_MODE")
 	private String testMode;// read/write

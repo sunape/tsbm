@@ -340,6 +340,14 @@ public class CoreBiz {
 		Core.initInnerFucntion();
 		this.tsParamConfig = tsParamConfig;
 		this.dbAdapter = (DBAdapter) Class.forName(tds.getDriverClass()).newInstance();
+		String batchCode=String.format("%s_%s_%s_",tds.getBatchCode(),tds.getDbType(),tsParamConfig.getTestMode());
+		if("read".equals(tsParamConfig.getTestMode())) {
+			batchCode+=tsParamConfig.getReadClients();
+		}
+		if("write".equals(tsParamConfig.getTestMode())) {
+			batchCode+=tsParamConfig.getWriteClients();
+		}
+		this.tsParamConfig.setBatchCode(batchCode);
 		dbAdapter.initDataSource(tds,tsParamConfig);
 		initShiftTime();
 		initSensorFunction();

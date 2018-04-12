@@ -1,6 +1,5 @@
 package cn.edu.ruc.base;
 
-import cn.edu.ruc.adapter.DBAdapter;
 import cn.edu.ruc.cmd.CfgName;
 
 /**
@@ -19,6 +18,10 @@ public class TsDataSource {
 	private String passwd;
 	@CfgName(name="DB_USER")
 	private String user;
+	@CfgName(name="BATCH_CODE")
+	private String batchCode;
+	@CfgName(name="DB_TYPE")
+	private String dbType;
 	public String getDriverClass() {
 		return driverClass;
 	}
@@ -55,5 +58,17 @@ public class TsDataSource {
 				+ ", user=" + user + "]";
 	}
 	public static void main(String[] args) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+	}
+	public String getDbType() {
+		return dbType;
+	}
+	public void setDbType(String dbType) {
+		this.dbType = dbType;
+	}
+	public String getBatchCode() {
+		return batchCode;
+	}
+	public void setBatchCode(String batchCode) {
+		this.batchCode = batchCode;
 	}
 }
