@@ -243,7 +243,7 @@ public class TbaseAdapter implements DBAdapter {
 		    			if(dataSource==null){
 		    				dataSource = new DruidDataSource();  
 		    				dataSource.setUsername(USER);  
-		    				dataSource.setUrl(URL);  
+		    				dataSource.setUrl(JDBC_URL);  
 		    				dataSource.setPassword(PASSWD);  
 		    				dataSource.setDriverClassName(JDBC_CLASS);  
 		    				dataSource.setInitialSize(10);  
