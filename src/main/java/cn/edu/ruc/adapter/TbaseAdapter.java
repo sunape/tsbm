@@ -2,6 +2,7 @@ package cn.edu.ruc.adapter;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedList;
@@ -185,13 +186,96 @@ public class TbaseAdapter implements DBAdapter {
 	@Override
 	public Object preQuery(TsQuery tsQuery) {
 		// TODO Auto-generated method stub
-		return null;
+		StringBuffer sc=new StringBuffer();
+		sc.append("select ");
+		switch (tsQuery.getQueryType()) {
+		case 1://简单查询
+			sc.append(tsQuery.getSensorName());
+			sc.append(" ");
+			break;
+		case 2://分析查询
+			sc.append("");
+			if(tsQuery.getAggreType()==1) {
+				sc.append("max(");
+			}
+			if(tsQuery.getAggreType()==2) {
+				sc.append("min(");
+			}
+			if(tsQuery.getAggreType()==3) {
+				sc.append("avg(");
+			}
+			if(tsQuery.getAggreType()==4) {
+				sc.append("count(");
+			}
+			sc.append(tsQuery.getSensorName());
+			sc.append(") ");
+			break;
+		default:
+			break;
+		}
+		sc.append(String.format("from %s.% where d='%s'",DB_NAME,METRIC,tsQuery.getDeviceName()));
+		if(tsQuery.getStartTimestamp()!=null) {
+			sc.append("and ");
+			sc.append("ts >=");
+			sc.append(tsQuery.getStartTimestamp());
+			sc.append(" ");
+		}
+		if(tsQuery.getEndTimestamp()!=null) {
+			sc.append("and ");
+			sc.append("ts <=");
+			sc.append(tsQuery.getEndTimestamp());
+			sc.append(" ");
+		}
+		if(tsQuery.getGroupByUnit()!=null&&tsQuery.getQueryType()==2) {
+			sc.append("INTERVAL");
+			switch (tsQuery.getGroupByUnit()) {
+			case 1:
+				sc.append("(1S)");
+				break;
+			case 2:
+				sc.append("(1M)");
+				break;
+			case 3:
+				sc.append("(1H)");
+				break;
+			case 4:
+				sc.append("(1D)");
+				break;
+			case 5:
+				sc.append("(30D)");
+				break;
+			case 6:
+				sc.append("(1Y)");
+				break;
+			default:
+				break;
+			}
+		}
+		return sc.toString();
 	}
 
 	@Override
 	public Status execQuery(Object query) {
-		// TODO Auto-generated method stub
-		return null;
+		Connection conn = getConnection();
+		Statement statement =null;
+		long costTime=0L;
+		try {
+			statement = conn.createStatement();
+			long start = System.nanoTime();
+			System.out.println(query.toString());
+			ResultSet executeQuery = statement.executeQuery(query.toString());
+			if(executeQuery.next()) {
+				System.out.println(executeQuery.getObject(1));
+			}
+			long end = System.nanoTime();
+			costTime=end-start;
+//			statement.clearBatch();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		closeStatement(statement);
+		closeConnection(conn);
+		return Status.OK(costTime);
 	}
 	private Status exeOkHttpRequest(Request request) {
 		long costTime = 0L;
