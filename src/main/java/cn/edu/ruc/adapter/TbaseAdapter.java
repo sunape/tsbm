@@ -213,7 +213,7 @@ public class TbaseAdapter implements DBAdapter {
 		default:
 			break;
 		}
-		sc.append(String.format("from %s.% where d='%s'",DB_NAME,METRIC,tsQuery.getDeviceName()));
+		sc.append(String.format("from %s.%s where d='%s'",DB_NAME,METRIC,tsQuery.getDeviceName()));
 		if(tsQuery.getStartTimestamp()!=null) {
 			sc.append("and ");
 			sc.append("ts >=");
