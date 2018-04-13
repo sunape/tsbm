@@ -103,7 +103,7 @@ public class CoreBiz {
 			sumPoints+=sumNum;
 			//记录日志
 			count++;
-			if(count%100==0) {
+			if(count%(100/tsParamConfig.getWriteClients())==0) {
 				result=generateWriteResult(timeoutList,ppsList);
 				LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}],timeout(us)[max:{},min:{},95:{},50:{},mean:{}]",
 						(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
@@ -345,7 +345,7 @@ public class CoreBiz {
 			batchCode+=tsParamConfig.getReadClients();
 		}
 		if("write".equals(tsParamConfig.getTestMode())) {
-			batchCode+=tsParamConfig.getWriteClients();
+			batchCode+=tsParamConfig.getDeviceNum();
 		}
 		this.tsParamConfig.setBatchCode(batchCode);
 		dbAdapter.initDataSource(tds,tsParamConfig);
