@@ -35,6 +35,7 @@ do
         grep $CHANGE_PARAMETER  $BENCHMARK_HOME/conf/cfg_dyn.properties
     else
         sh $BENCHMARK_HOME/tsbm_dyn.sh
+        sleep 2
     fi
   fi
 done
