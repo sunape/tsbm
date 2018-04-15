@@ -9,6 +9,9 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.druid.pool.DruidDataSource;
 
 import cn.edu.ruc.base.TsDataSource;
@@ -50,6 +53,7 @@ public class TbaseAdapter implements DBAdapter {
 		       .connectTimeout(500000, TimeUnit.MILLISECONDS)
 		       .writeTimeout(500000, TimeUnit.MILLISECONDS)
 		       .build();
+	private Logger logger=LoggerFactory.getLogger(getClass());
 	public static OkHttpClient getOkHttpClient(){
 		return OK_HTTP_CLIENT;
 	}
