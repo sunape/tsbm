@@ -301,9 +301,10 @@ public class TbaseAdapter implements DBAdapter {
 	private void closeConnection(Connection conn){
 		try {
 			if(conn!=null){
-				conn.close();
+//				conn.close();
+				releaseConnection(conn);
 			}
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -316,12 +317,16 @@ public class TbaseAdapter implements DBAdapter {
 			e.printStackTrace();
 		}
 	}
-	private  Connection getConnection(){
+	private synchronized  Connection getConnection(){
 		Connection connection=null;
 		 try {
-			connection = DriverManager.getConnection(JDBC_URL);
+//			connection = DriverManager.getConnection(JDBC_URL);
+			while(connectionPool.size()==0) {
+				Thread.sleep(1000L);
+			}
+			connection = connectionPool.removeFirst();
 //			 connection=getDataSource().getConnection();
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		 return connection;
@@ -348,5 +353,24 @@ public class TbaseAdapter implements DBAdapter {
 					}
 		    	}
 		    	return dataSource;
+	    }
+	    private LinkedList<Connection> connectionPool=new LinkedList<>();
+	    private synchronized void initConnectionPool() {
+	    		if(connectionPool.size()==0) {
+	    			synchronized (DB_NAME) {
+	    				int max=tspc.getWriteClients()+tspc.getReadClients();
+	    				for(int i=0;i<max;i++) {
+	    					try {
+	    						Connection connection = DriverManager.getConnection(JDBC_URL);
+	    						connectionPool.addLast(connection);
+	    					} catch (SQLException e) {
+	    						e.printStackTrace();
+	    					}
+	    				}
+	    			}
+	    		}
+	    }
+	    private synchronized void releaseConnection(Connection connection) {
+	    	    connectionPool.addLast(connection);
 	    }
 }
