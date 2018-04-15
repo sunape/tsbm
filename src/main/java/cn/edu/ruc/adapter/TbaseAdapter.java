@@ -269,7 +269,7 @@ public class TbaseAdapter implements DBAdapter {
 			System.out.println(query.toString());
 			ResultSet executeQuery = statement.executeQuery(query.toString());
 			if(executeQuery.next()) {
-				System.out.println(executeQuery.getObject(1));
+				System.out.println(executeQuery.getObject(0));
 			}
 			long end = System.nanoTime();
 			costTime=end-start;
