@@ -76,6 +76,7 @@ public class TbaseAdapter implements DBAdapter {
 		URL=String.format(URL,ds.getIp(),ds.getPort());
 		LOGIN_URL = URL +String.format(LOGIN_URL,ds.getUser(),ds.getPasswd());
 		SQL_URL = URL +String.format(SQL_URL, DB_NAME);
+		initConnectionPool();
 //		getDataSource();
 //		 创建metric JDBC
 		int deviceNum = tspc.getDeviceNum();
