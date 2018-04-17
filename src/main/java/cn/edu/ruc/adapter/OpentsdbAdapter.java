@@ -172,4 +172,9 @@ public class OpentsdbAdapter implements DBAdapter {
 		}
 		return Status.OK(costTime);
 	}
+	@Override
+	public void closeAdapter() {
+		// TODO Auto-generated method stub
+		
+	}
 }

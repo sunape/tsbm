@@ -230,9 +230,10 @@ public class CoreBiz {
 					results[1]=0L;
 					long endTime=System.currentTimeMillis()+TimeUnit.SECONDS.toMillis(tsParamConfig.getReadPeriod());
 					Long bizStartTime;
+					DBAdapter newDbAdapter = dbAdapter.getClass().newInstance();
 					while((bizStartTime=System.currentTimeMillis())<endTime) {//结束时间之前，一直执行
 						TsQuery query = generateTsQuery();
-						Status status = execQuery(dbAdapter, query);
+						Status status = execQuery(newDbAdapter, query);
 						if(status.isOK()) {
 							results[0]+=status.getCostTime()/1000;//us
 							results[1]=results[1]+1;
@@ -244,6 +245,7 @@ public class CoreBiz {
 							Thread.sleep(tsParamConfig.getReadPulse());
 						}
 					}
+					newDbAdapter.closeAdapter();
 					return results;
 				}
 			});

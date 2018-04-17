@@ -217,4 +217,9 @@ public class InfluxdbAdapter implements DBAdapter {
 		DBAdapter adapter=new InfluxdbAdapter();
 		System.out.println(adapter.preQuery(query));
 	}
+	@Override
+	public void closeAdapter() {
+		// TODO Auto-generated method stub
+		
+	}
 }

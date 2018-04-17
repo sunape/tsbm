@@ -37,4 +37,9 @@ public interface DBAdapter {
 	/**
 	 * 校验数据操作结果
 	 */
+	
+	/**
+	 * 关闭当前适配器对象
+	 */
+	public void closeAdapter();
 }

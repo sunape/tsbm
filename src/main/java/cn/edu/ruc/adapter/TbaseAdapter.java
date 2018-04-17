@@ -42,7 +42,7 @@ public class TbaseAdapter implements DBAdapter {
 	private static String URL="http://%s:%s";
 	private static String LOGIN_URL="/rest/login/%s/%s";
 	private static String SQL_URL="/rest/sql/%s";
-	private TsParamConfig tspc;
+	private static TsParamConfig tspc;
 	private static  String METRIC="sensor";
 	private static String DEViCE_TAG="d";
 	private static String SENSOR_TAG="s";
@@ -54,6 +54,7 @@ public class TbaseAdapter implements DBAdapter {
 		       .writeTimeout(500000, TimeUnit.MILLISECONDS)
 		       .build();
 	private Logger logger=LoggerFactory.getLogger(getClass());
+	private Connection conn=null;
 	public static OkHttpClient getOkHttpClient(){
 		return OK_HTTP_CLIENT;
 	}
@@ -262,7 +263,6 @@ public class TbaseAdapter implements DBAdapter {
 
 	@Override
 	public Status execQuery(Object query) {
-		Connection conn = getConnection();
 		Statement statement =null;
 		long costTime=0L;
 		try {
@@ -275,13 +275,11 @@ public class TbaseAdapter implements DBAdapter {
 			}
 			long end = System.nanoTime();
 			costTime=end-start;
-//			statement.clearBatch();
 		} catch (Exception e) {
 			e.printStackTrace();
 			Status.FAILED(Long.MAX_VALUE);
 		}
 		closeStatement(statement);
-		closeConnection(conn);
 		return Status.OK(costTime);
 	}
 	private Status exeOkHttpRequest(Request request) {
@@ -305,7 +303,6 @@ public class TbaseAdapter implements DBAdapter {
 		try {
 			if(conn!=null){
 				conn.close();
-//				releaseConnection(conn);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -324,11 +321,6 @@ public class TbaseAdapter implements DBAdapter {
 		Connection connection=null;
 		 try {
 			connection = DriverManager.getConnection(JDBC_URL);
-//			while(connectionPool.size()==0) {
-//				Thread.sleep(1000L);
-//			}
-//			connection = connectionPool.removeFirst();
-//			 connection=getDataSource().getConnection();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -376,4 +368,11 @@ public class TbaseAdapter implements DBAdapter {
 	    private synchronized void releaseConnection(Connection connection) {
 	    	    connectionPool.addLast(connection);
 	    }
+		@Override
+		public void closeAdapter() {
+			closeConnection(conn);
+		}
+		public TbaseAdapter() {
+			conn=getConnection();
+		}
 }
