@@ -80,6 +80,9 @@ public class TbaseAdapter implements DBAdapter {
 		initConnectionPool();
 //		getDataSource();
 //		 创建metric JDBC
+		if(tspc.getTestMode().equals("read")) {
+			return;
+		}
 		int deviceNum = tspc.getDeviceNum();
 		int sensorNum = tspc.getSensorNum();
 		StringBuffer fieldAttrs=new StringBuffer();

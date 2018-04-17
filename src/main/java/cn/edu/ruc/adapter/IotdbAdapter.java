@@ -328,4 +328,9 @@ public class IotdbAdapter implements DBAdapter {
 	    	}
 	    	return dataSource;
     }
+	@Override
+	public void closeAdapter() {
+		// TODO Auto-generated method stub
+		
+	}
 }
