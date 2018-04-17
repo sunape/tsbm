@@ -186,7 +186,7 @@ public class TbaseAdapter implements DBAdapter {
 //			statement.clearBatch();
 		} catch (Exception e) {
 			e.printStackTrace();
-			Status.FAILED(Long.MAX_VALUE);
+			return Status.FAILED(Long.MAX_VALUE);
 		}
 		closeStatement(statement);
 		closeConnection(conn);
@@ -271,16 +271,14 @@ public class TbaseAdapter implements DBAdapter {
 		try {
 			statement = conn.createStatement();
 			long start = System.nanoTime();
-			System.out.println(query.toString());
 			ResultSet executeQuery = statement.executeQuery(query.toString());
 			if(executeQuery.next()) {
-				System.out.println(executeQuery.getObject(0));
+//				System.out.println(executeQuery.getObject(0));
 			}
 			long end = System.nanoTime();
 			costTime=end-start;
 		} catch (Exception e) {
-			e.printStackTrace();
-			Status.FAILED(Long.MAX_VALUE);
+			return Status.FAILED(Long.MAX_VALUE);
 		}
 		closeStatement(statement);
 		return Status.OK(costTime);
