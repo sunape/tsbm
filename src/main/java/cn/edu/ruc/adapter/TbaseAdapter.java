@@ -304,8 +304,8 @@ public class TbaseAdapter implements DBAdapter {
 	private void closeConnection(Connection conn){
 		try {
 			if(conn!=null){
-//				conn.close();
-				releaseConnection(conn);
+				conn.close();
+//				releaseConnection(conn);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -323,11 +323,11 @@ public class TbaseAdapter implements DBAdapter {
 	private synchronized  Connection getConnection(){
 		Connection connection=null;
 		 try {
-//			connection = DriverManager.getConnection(JDBC_URL);
-			while(connectionPool.size()==0) {
-				Thread.sleep(1000L);
-			}
-			connection = connectionPool.removeFirst();
+			connection = DriverManager.getConnection(JDBC_URL);
+//			while(connectionPool.size()==0) {
+//				Thread.sleep(1000L);
+//			}
+//			connection = connectionPool.removeFirst();
 //			 connection=getDataSource().getConnection();
 		} catch (Exception e) {
 			e.printStackTrace();
