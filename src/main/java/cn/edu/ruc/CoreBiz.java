@@ -309,16 +309,16 @@ public class CoreBiz {
 		if(queryType<tsParamConfig.getReadSimpleRatio()) {
 			query.setAggreType(1);
 			//可以加上比较值 按照几率
-			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.MINUTES.toMillis(15));
+			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(24));
 		}else if(queryType<tsParamConfig.getReadSimpleRatio()+tsParamConfig.getReadAggreRatio()) {
 			query.setQueryType(2);
 			query.setAggreType(random.nextInt(3)+1);
-			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(1));
+			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(24));
 		}else {//一小时每分钟内的最大最小平均值
 			query.setQueryType(2);
 			query.setAggreType(random.nextInt(3)+1);
 			query.setGroupByUnit(2);
-			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(1));
+			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(24));
 		}
 		query.setStartTimestamp(timeslot.getStartTime());
 		query.setEndTimestamp(timeslot.getEndTime());
