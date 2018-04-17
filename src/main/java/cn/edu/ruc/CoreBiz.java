@@ -225,9 +225,10 @@ public class CoreBiz {
 						Thread.sleep(sleepTime);
 //						LOGGER.info("sleep time "+sleepTime+" ms");
 					}
-					Long[] results=new Long[2];
+					Long[] results=new Long[3];
 					results[0]=0L;
 					results[1]=0L;
+					results[2]=0L;
 					long endTime=System.currentTimeMillis()+TimeUnit.SECONDS.toMillis(tsParamConfig.getReadPeriod());
 					Long bizStartTime;
 					DBAdapter newDbAdapter = dbAdapter.getClass().newInstance();
@@ -238,6 +239,8 @@ public class CoreBiz {
 							results[0]+=status.getCostTime()/1000;//us
 							results[1]=results[1]+1;
 							timeoutList.add(status.getCostTime()/1000);//us
+						}else {
+							results[2]=results[2]+1;
 						}
 						long bizEndTime=System.currentTimeMillis();
 						long bizCost=bizEndTime-bizStartTime;
@@ -269,6 +272,7 @@ public class CoreBiz {
 		});
 		long sumTimeout=0L;
 		long sumSuccessNum=0L;
+		long failedSum=0L;
 		TsReadResult result=new TsReadResult();
 		try {
 			for(int index=0;index<csn;index++) {
@@ -276,12 +280,13 @@ public class CoreBiz {
 					results = cs.take().get();
 					sumTimeout+=results[0];
 					sumSuccessNum+=results[1];
+					failedSum+=results[2];
 //					timeoutList.add(results[0]);
 			}
 			long costTime=System.nanoTime()-startTime;
 			int tps=(int) (sumSuccessNum/(costTime/Math.pow(10, 9)));
 			long avgtimeout=sumTimeout/sumSuccessNum;
-			LOGGER.info("clients {},throughput [{} requests/sec],mean timeout [{} us]",csn,tps,avgtimeout);
+			LOGGER.info("clients {},throughput [{} requests/sec],mean timeout [{} us],successNum [{}/{}]",csn,tps,avgtimeout,sumSuccessNum,failedSum+sumSuccessNum);
 			//返回数据处理
 			result.setBatchCode(tsParamConfig.getBatchCode());
 			result.setStartTime(programStartTime);
@@ -289,6 +294,7 @@ public class CoreBiz {
 			result.setMeanTimeout((int)avgtimeout);
 			result.setTps(tps);
 			result.setSumRequests(sumSuccessNum);
+			result.setSuccessRatio((double)sumSuccessNum/failedSum+sumSuccessNum);
 			Collections.sort(timeoutList);
 			result.setMaxTimeout(timeoutList.get( timeoutList.size()-1).intValue());
 			result.setMinTimeout(timeoutList.get(0).intValue());

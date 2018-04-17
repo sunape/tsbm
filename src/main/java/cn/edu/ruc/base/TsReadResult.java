@@ -10,6 +10,8 @@ public class TsReadResult implements Serializable{
 	private static final long serialVersionUID = 1L;
 	private String batchCode;//批次号
 	private Integer tps;//吞吐量
+	private double successRatio=0;//请求成功率
+	
 	
 	private Integer meanTimeout;//
 	private Integer maxTimeout;//
@@ -79,5 +81,11 @@ public class TsReadResult implements Serializable{
 	}
 	public void setSumRequests(Long sumRequests) {
 		this.sumRequests = sumRequests;
+	}
+	public double getSuccessRatio() {
+		return successRatio;
+	}
+	public void setSuccessRatio(double successRatio) {
+		this.successRatio = successRatio;
 	}
 }
