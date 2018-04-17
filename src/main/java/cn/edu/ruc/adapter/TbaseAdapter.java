@@ -182,6 +182,7 @@ public class TbaseAdapter implements DBAdapter {
 //			statement.clearBatch();
 		} catch (Exception e) {
 			e.printStackTrace();
+			Status.FAILED(Long.MAX_VALUE);
 		}
 		closeStatement(statement);
 		closeConnection(conn);
@@ -277,6 +278,7 @@ public class TbaseAdapter implements DBAdapter {
 //			statement.clearBatch();
 		} catch (Exception e) {
 			e.printStackTrace();
+			Status.FAILED(Long.MAX_VALUE);
 		}
 		closeStatement(statement);
 		closeConnection(conn);
@@ -302,8 +304,8 @@ public class TbaseAdapter implements DBAdapter {
 	private void closeConnection(Connection conn){
 		try {
 			if(conn!=null){
-//				conn.close();
-				releaseConnection(conn);
+				conn.close();
+//				releaseConnection(conn);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -322,11 +324,11 @@ public class TbaseAdapter implements DBAdapter {
 		Connection connection=null;
 		 try {
 //			connection = DriverManager.getConnection(JDBC_URL);
-			while(connectionPool.size()==0) {
-				Thread.sleep(1000L);
-			}
-			connection = connectionPool.removeFirst();
-//			 connection=getDataSource().getConnection();
+//			while(connectionPool.size()==0) {
+//				Thread.sleep(1000L);
+//			}
+//			connection = connectionPool.removeFirst();
+			 connection=getDataSource().getConnection();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
