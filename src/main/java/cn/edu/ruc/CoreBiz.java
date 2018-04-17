@@ -294,7 +294,7 @@ public class CoreBiz {
 			result.setMeanTimeout((int)avgtimeout);
 			result.setTps(tps);
 			result.setSumRequests(sumSuccessNum);
-			result.setSuccessRatio((double)sumSuccessNum/failedSum+sumSuccessNum);
+			result.setSuccessRatio((double)sumSuccessNum/(failedSum+sumSuccessNum));
 			Collections.sort(timeoutList);
 			result.setMaxTimeout(timeoutList.get( timeoutList.size()-1).intValue());
 			result.setMinTimeout(timeoutList.get(0).intValue());
