@@ -8,7 +8,7 @@ import cn.edu.ruc.cmd.CfgName;
  *
  */
 public class TsDataSource {
-	@CfgName(name="DB_DRIVER_CLASS")
+//	@CfgName(name="DB_DRIVER_CLASS")
 	private String driverClass;
 	@CfgName(name="DB_IP")
 	private String ip;

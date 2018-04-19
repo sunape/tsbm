@@ -1,17 +1,12 @@
 package cn.edu.ruc.biz;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
-
 import cn.edu.ruc.TSUtils;
-import cn.edu.ruc.db.DBBase;
 
 /**
  * 系统运行常量值
@@ -46,8 +41,6 @@ public class Constants {
 	/**历史数据结束时间*/
 	public static Long HISTORY_END_TIME;
 	
-	/**当前测试的数据库实例*/
-	private static DBBase DB_BASE;
 	
 	//负载生成器参数 start
 	/**LoadBatchId 批次id*/
@@ -86,23 +79,6 @@ public class Constants {
 		for(String key:keySet){
 			System.out.println("key:"+key+"|value:"+SENSOR_FUNCTION.get(key));
 		}
-	}
-	/**
-	 * 获取测试数据库
-	 * FIXME 可优化  添加properties
-	 * @param props
-	 * @return
-	 */
-	public static DBBase getDBBase(){
-		try {
-			if(DB_BASE==null){
-				Class<?> dbClass  = Class.forName(SystemParam.DB_CLASS);
-				DB_BASE = (DBBase)dbClass.newInstance();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return DB_BASE;
 	}
 	public static FunctionParam getFunctionByFunctionTypeAndId(String functionType,String functionId){
 		if(functionType.indexOf("-mono-k")!=-1){

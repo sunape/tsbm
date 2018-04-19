@@ -103,7 +103,7 @@ public class CoreBiz {
 			sumPoints+=sumNum;
 			//记录日志
 			count++;
-			if(count%(100/tsParamConfig.getWriteClients())==0) {
+			if(count%(10)==0) {
 				result=generateWriteResult(timeoutList,ppsList);
 				LOGGER.info("progerss [{}/{}],pps [{} points/s],points [{},{}],timeout(us)[max:{},min:{},95:{},50:{},mean:{}]",
 						(currentTime-tsParamConfig.getStartTime())/(tsParamConfig.getStep()*tsParamConfig.getCacheTimes()),
@@ -157,15 +157,16 @@ public class CoreBiz {
 	 * @return
 	 */
 	private LinkedList<TsWrite> generatePkg(long currentTime) {
-		int dn=tsParamConfig.getDeviceNum();
+		int dn=tsParamConfig.getDeviceNum();//每个客户端对应的设备数
 		int cn=tsParamConfig.getWriteClients();
 		int sn=tsParamConfig.getSensorNum();
+		int sdn=dn*cn;//总设备数
 		long generateStartTime=currentTime;
 		long generateEndTime=generateStartTime+tsParamConfig.getStep()*tsParamConfig.getCacheTimes();
 		LinkedList<TsWrite> pkgs=new LinkedList<TsWrite>();
 		for(int clientIndex=0;clientIndex<cn;clientIndex++) {
 			TsWrite tsw=new TsWrite();
-			for(int cdn=0;cdn<dn;cdn++) {
+			for(int cdn=0;cdn<sdn;cdn++) {
 				if(cdn%cn==clientIndex) {//生成数据并加入
 					long currentTime0=generateStartTime;
 					while(currentTime0<generateEndTime) {
@@ -362,9 +363,10 @@ public class CoreBiz {
 	}
 	private void initShiftTime() {
 		int dn=tsParamConfig.getDeviceNum();
+		int sdn=dn*tsParamConfig.getWriteClients();
 		int sn=tsParamConfig.getSensorNum();
-		long sensorSum=dn*sn;
-		for(int cdn=0;cdn<dn;cdn++) {
+		long sensorSum=sdn*sn;
+		for(int cdn=0;cdn<sdn;cdn++) {
 			for(int csn=0;csn<sn;csn++) {
 				shiftTimeMap.put(devicePre+cdn+"_"+sensorPre+csn, (long)(random.nextDouble()*sensorSum));
 			}

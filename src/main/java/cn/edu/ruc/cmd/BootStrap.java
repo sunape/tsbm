@@ -38,6 +38,7 @@ public class BootStrap {
 //	private static final String SYS_BINDING_PATH="bindings_path";
 	private static Properties SYSTEM_PARAM=new Properties();
 	private static Properties DB_PARAM=new Properties();
+	private static Properties BINDING_PARAM=new Properties();
 	private static final Logger LOGGER=LoggerFactory.getLogger(BootStrap.class);
 	public static void main(String[] args) throws Exception {
 		initParam(args);
@@ -83,6 +84,7 @@ public class BootStrap {
 			System.setProperty(DB_CONFIG_PATH, dbConfigPath);
 			SYSTEM_PARAM.load(new FileInputStream(new File(configPath)));
 			DB_PARAM.load(new FileInputStream(new File(dbConfigPath)));
+			BINDING_PARAM.load(new FileInputStream(new File(bingdingsPath)));
 			Properties prop=new Properties();
 			prop.load(new FileInputStream(new File(bingdingsPath)));
 		} catch (Exception e) {
@@ -129,6 +131,7 @@ public class BootStrap {
 				e.printStackTrace();
 			}
 		}
+		tsds.setDriverClass(BINDING_PARAM.getProperty(tsds.getDbType()));
 		return tsds;
 	}
 	private static void writeResult(String json) throws Exception {

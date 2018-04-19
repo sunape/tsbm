@@ -14,7 +14,6 @@ import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
 import cn.edu.ruc.db.Status;
-import cn.edu.ruc.db.influxdb.HttpPoolManager;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -190,7 +189,7 @@ public class InfluxdbAdapter implements DBAdapter {
 	private Status exeOkHttpRequest(Request request) {
 		long costTime = 0L;
 	    Response response;
-	    OkHttpClient client = HttpPoolManager.getOkHttpClient();
+	    OkHttpClient client = getOkHttpClient();
 		try {
 			long startTime1=System.nanoTime();
 			response = client.newCall(request).execute();
@@ -221,5 +220,13 @@ public class InfluxdbAdapter implements DBAdapter {
 	public void closeAdapter() {
 		// TODO Auto-generated method stub
 		
+	}
+	private static final OkHttpClient OK_HTTP_CLIENT = new OkHttpClient().newBuilder()
+		       .readTimeout(500000, TimeUnit.MILLISECONDS)
+		       .connectTimeout(500000, TimeUnit.MILLISECONDS)
+		       .writeTimeout(500000, TimeUnit.MILLISECONDS)
+		       .build();
+	public static OkHttpClient getOkHttpClient(){
+		return OK_HTTP_CLIENT;
 	}
 }
