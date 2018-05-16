@@ -99,6 +99,9 @@ public class CoreBiz {
 			}
 			long bizEndTime=System.currentTimeMillis();
 			long bizCost=bizEndTime-bizStartTime;
+			if(tsParamConfig.getBackgroupStatus().equals(1)&&bizCost<tsParamConfig.getStep()) {//如果负载均衡运行
+				bizCost=tsParamConfig.getStep();
+			}
 			int pps=(int) (sumNum/(bizCost/Math.pow(10.0, 3)));
 			sumPoints+=sumNum;
 			//记录日志
@@ -121,6 +124,9 @@ public class CoreBiz {
 			long costTime = System.currentTimeMillis()-bizStartTime;
 			if(costTime<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
 				Thread.sleep(tsParamConfig.getWritePulse()-bizCost);
+			}
+			if(tsParamConfig.getBackgroupStatus().equals(1)&&costTime<tsParamConfig.getStep()) {//如果负载均衡运行
+				Thread.sleep(tsParamConfig.getStep()-bizCost);
 			}
 		}
 		pool.shutdown();
