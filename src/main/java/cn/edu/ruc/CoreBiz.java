@@ -76,7 +76,7 @@ public class CoreBiz {
 					@Override
 					public Status call() throws Exception {
 						if(tsParamConfig.getBackgroupStatus().equals(1)) {
-							int sleepTime = random.nextInt(tsParamConfig.getStep().intValue());
+							int sleepTime = random.nextInt(tsParamConfig.getStep().intValue())+1;
 							Thread.sleep(sleepTime);
 //							LOGGER.info("sleep time "+sleepTime+" ms");
 						}
@@ -228,7 +228,7 @@ public class CoreBiz {
 				@Override
 				public Long[] call() throws Exception {
 					if(tsParamConfig.getBackgroupStatus().equals(1)) {
-						int sleepTime = random.nextInt((int)tsParamConfig.getReadPulse());
+						int sleepTime = random.nextInt((int)tsParamConfig.getReadPulse())+1;
 						Thread.sleep(sleepTime);
 //						LOGGER.info("sleep time "+sleepTime+" ms");
 					}
