@@ -76,7 +76,7 @@ public class CoreBiz {
 					@Override
 					public Status call() throws Exception {
 						if(tsParamConfig.getBackgroupStatus().equals(1)) {
-							int sleepTime = random.nextInt(tsParamConfig.getStep().intValue());
+							int sleepTime = random.nextInt(tsParamConfig.getStep().intValue())+1;
 							Thread.sleep(sleepTime);
 //							LOGGER.info("sleep time "+sleepTime+" ms");
 						}
@@ -123,10 +123,10 @@ public class CoreBiz {
 			currentTime+=tsParamConfig.getStep()*tsParamConfig.getCacheTimes();
 			long costTime = System.currentTimeMillis()-bizStartTime;
 			if(costTime<tsParamConfig.getWritePulse()) {//每隔writePulse ms进行一批发送
-				Thread.sleep(tsParamConfig.getWritePulse()-bizCost);
+				Thread.sleep(tsParamConfig.getWritePulse()-costTime);
 			}
 			if(tsParamConfig.getBackgroupStatus().equals(1)&&costTime<tsParamConfig.getStep()) {//如果负载均衡运行
-				Thread.sleep(tsParamConfig.getStep()-bizCost);
+				Thread.sleep(tsParamConfig.getStep()-costTime);
 			}
 		}
 		pool.shutdown();
@@ -228,7 +228,7 @@ public class CoreBiz {
 				@Override
 				public Long[] call() throws Exception {
 					if(tsParamConfig.getBackgroupStatus().equals(1)) {
-						int sleepTime = random.nextInt((int)tsParamConfig.getReadPulse());
+						int sleepTime = random.nextInt((int)tsParamConfig.getReadPulse())+1;
 						Thread.sleep(sleepTime);
 //						LOGGER.info("sleep time "+sleepTime+" ms");
 					}
