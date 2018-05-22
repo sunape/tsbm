@@ -57,7 +57,7 @@ public class IotdbAdapter implements DBAdapter {
      * 初始化时间序列，并设置storage
      */
 	private void initTimeseriesAndStorage(TsParamConfig tspc) {
-		int deviceNum = tspc.getDeviceNum();
+		int deviceNum = tspc.getDeviceNum()*tspc.getWriteClients();
 		int sensorNum = tspc.getSensorNum();
 		Connection connection = null;
 		Statement statement = null;
