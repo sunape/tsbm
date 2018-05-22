@@ -67,6 +67,11 @@ public class IotdbAdapter implements DBAdapter {
 		    try {
 			    	String setStorageSql="SET STORAGE GROUP TO "+ROOT_SERIES_NAME;
 			    	statement.execute(setStorageSql);
+			    	ResultSet rs = statement.executeQuery("show timeseries");
+			    	logger.info("=======");
+			    	while(rs.next()) {
+			    		logger.info(""+rs.getInt("0"));;
+			    	}
 			} catch (Exception e) {
 				e.printStackTrace();			}
 		    for(int deviceIdx=0;deviceIdx<deviceNum;deviceIdx++) {
