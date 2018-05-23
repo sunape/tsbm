@@ -59,36 +59,47 @@ public class IotdbAdapter implements DBAdapter {
 	private void initTimeseriesAndStorage(TsParamConfig tspc) {
 		int deviceNum = tspc.getDeviceNum()*tspc.getWriteClients();
 		int sensorNum = tspc.getSensorNum();
+		deviceNum=150*500;
 		Connection connection = null;
 		Statement statement = null;
 		try {
 		    connection = getConnection();
 		    statement = connection.createStatement();
 		    try {
-			    	ResultSet rs = statement.executeQuery("show timeseries");
-			    	logger.info("=======");
-			    	while(rs.next()) {
-			    		logger.info(""+rs.getInt("0"));;
-			    	}
 			    	String setStorageSql="SET STORAGE GROUP TO "+ROOT_SERIES_NAME;
 			    	statement.execute(setStorageSql);
+				for(int deviceIdx=0;deviceIdx<deviceNum;deviceIdx++) {
+			    		try {
+				    			String deviceCode="d_"+deviceIdx;
+				    			for(int sensorIdx=0;sensorIdx<sensorNum;sensorIdx++) {
+				    				String sensorCode="s_"+sensorIdx;
+				    				String sql="CREATE TIMESERIES "+ROOT_SERIES_NAME+"."+deviceCode+"."+sensorCode+"  WITH DATATYPE=FLOAT, ENCODING=RLE";
+				    				statement.addBatch(sql);
+				    			}
+				    			statement.executeBatch();
+				    			statement.clearBatch();
+				    			logger.info("{} create timeseries finished[{}/{}].",deviceCode,deviceIdx+1,deviceNum);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+			    }
 			} catch (Exception e) {
 				e.printStackTrace();			}
-		    for(int deviceIdx=0;deviceIdx<deviceNum;deviceIdx++) {
-		    		try {
-			    			String deviceCode="d_"+deviceIdx;
-			    			for(int sensorIdx=0;sensorIdx<sensorNum;sensorIdx++) {
-			    				String sensorCode="s_"+sensorIdx;
-			    				String sql="CREATE TIMESERIES "+ROOT_SERIES_NAME+"."+deviceCode+"."+sensorCode+"  WITH DATATYPE=FLOAT, ENCODING=RLE";
-			    				statement.addBatch(sql);
-			    			}
-			    			statement.executeBatch();
-			    			statement.clearBatch();
-			    			logger.info("{} create timeseries finished[{}/{}].",deviceCode,deviceIdx+1,deviceNum);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-		    }
+//		    for(int deviceIdx=0;deviceIdx<deviceNum;deviceIdx++) {
+//		    		try {
+//			    			String deviceCode="d_"+deviceIdx;
+//			    			for(int sensorIdx=0;sensorIdx<sensorNum;sensorIdx++) {
+//			    				String sensorCode="s_"+sensorIdx;
+//			    				String sql="CREATE TIMESERIES "+ROOT_SERIES_NAME+"."+deviceCode+"."+sensorCode+"  WITH DATATYPE=FLOAT, ENCODING=RLE";
+//			    				statement.addBatch(sql);
+//			    			}
+//			    			statement.executeBatch();
+//			    			statement.clearBatch();
+//			    			logger.info("{} create timeseries finished[{}/{}].",deviceCode,deviceIdx+1,deviceNum);
+//					} catch (Exception e) {
+//						e.printStackTrace();
+//					}
+//		    }
 		  } catch (Exception e) {
 			  e.printStackTrace();
 		  } finally {
