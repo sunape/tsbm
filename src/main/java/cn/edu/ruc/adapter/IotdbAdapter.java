@@ -335,8 +335,8 @@ public class IotdbAdapter implements DBAdapter {
 	    				dataSource.setUrl(URL);  
 	    				dataSource.setPassword(PASSWD);  
 	    				dataSource.setDriverClassName(DRIVER_CLASS);  
-	    				dataSource.setInitialSize(10);  
-	    				dataSource.setMaxActive(tspc.getWriteClients()+tspc.getReadClients());  
+	    				dataSource.setInitialSize(10); 
+	    				dataSource.setMaxActive(1500);  
 	    				dataSource.setMaxWait(100);  
 	    				dataSource.setTestWhileIdle(false);  
 	    				dataSource.setTestOnReturn(false);  
