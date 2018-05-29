@@ -238,10 +238,10 @@ public class CoreBiz {
 					results[2]=0L;
 					long endTime=System.currentTimeMillis()+TimeUnit.SECONDS.toMillis(tsParamConfig.getReadPeriod());
 					Long bizStartTime;
-					DBAdapter newDbAdapter = dbAdapter.getClass().newInstance();
+//					DBAdapter newDbAdapter = dbAdapter.getClass().newInstance();
 					while((bizStartTime=System.currentTimeMillis())<endTime) {//结束时间之前，一直执行
 						TsQuery query = generateTsQuery();
-						Status status = execQuery(newDbAdapter, query);
+						Status status = execQuery(dbAdapter, query);
 						if(status.isOK()) {
 							results[0]+=status.getCostTime()/1000;//us
 							results[1]=results[1]+1;
@@ -255,7 +255,7 @@ public class CoreBiz {
 							Thread.sleep(tsParamConfig.getReadPulse());
 						}
 					}
-					newDbAdapter.closeAdapter();
+//					newDbAdapter.closeAdapter();
 					return results;
 				}
 			});
@@ -329,10 +329,15 @@ public class CoreBiz {
 			query.setQueryType(2);
 			query.setAggreType(random.nextInt(3)+1);
 			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(1));
-		}else {//一小时每分钟内的最大最小平均值
+		}else if(queryType<tsParamConfig.getReadSimpleRatio()+tsParamConfig.getReadAggreRatio()+tsParamConfig.getReadShrinkRatio()){//一小时每分钟内的最大最小平均值
 			query.setQueryType(2);
 			query.setAggreType(random.nextInt(3)+1);
 			query.setGroupByUnit(2);
+			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(1));
+		}else{//所有设备同一传感器聚合  1h
+			query.setQueryType(3);
+			query.setAggreType(random.nextInt(3)+1);
+			query.setDeviceName("*");
 			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(1));
 		}
 		query.setStartTimestamp(timeslot.getStartTime());
@@ -360,7 +365,7 @@ public class CoreBiz {
 			batchCode+=tsParamConfig.getReadClients();
 		}
 		if("write".equals(tsParamConfig.getTestMode())) {
-			batchCode+=tsParamConfig.getDeviceNum();
+			batchCode+=tsParamConfig.getWriteClients();
 		}
 		this.tsParamConfig.setBatchCode(batchCode);
 		dbAdapter.initDataSource(tds,tsParamConfig);

@@ -8,7 +8,7 @@ import java.io.Serializable;
  */
 public class TsQuery implements Serializable{
 	private static final long serialVersionUID = 1L;
-	private int queryType=1;//查询类型 1:简单查询 2:分析查询 
+	private int queryType=1;//查询类型 1:简单查询 2:分析查询  3:多设备聚合
 	private String deviceName;//设备名称 必传 
 	private String sensorName;//传感器名称  必传
 	private Long startTimestamp;

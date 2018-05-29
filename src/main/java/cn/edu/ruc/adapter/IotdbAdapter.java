@@ -222,6 +222,23 @@ public class IotdbAdapter implements DBAdapter {
 			sc.append(tsQuery.getSensorName());
 			sc.append(") ");
 			break;
+		case 3://分析查询
+			sc.append("");
+			if(tsQuery.getAggreType()==1) {
+				sc.append("max_value(");
+			}
+			if(tsQuery.getAggreType()==2) {
+				sc.append("min_value(");
+			}
+			if(tsQuery.getAggreType()==3) {
+				sc.append("mean(");
+			}
+			if(tsQuery.getAggreType()==4) {
+				sc.append("count(");
+			}
+			sc.append(tsQuery.getSensorName());
+			sc.append(") ");
+			break;
 		default:
 			break;
 		}
@@ -336,7 +353,7 @@ public class IotdbAdapter implements DBAdapter {
 	    				dataSource.setPassword(PASSWD);  
 	    				dataSource.setDriverClassName(DRIVER_CLASS);  
 	    				dataSource.setInitialSize(10); 
-	    				dataSource.setMaxActive(1500);  
+	    				dataSource.setMaxActive(65535);  
 	    				dataSource.setMaxWait(100);  
 	    				dataSource.setTestWhileIdle(false);  
 	    				dataSource.setTestOnReturn(false);  

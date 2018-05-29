@@ -41,6 +41,14 @@ public class TsParamConfig {
 	private double readAggreRatio=0.3;
 	@CfgName(name="READ_SHRINK_RATIO")
 	private double readShrinkRatio=0.5;
+	@CfgName(name="READ_HIGN_RATIO")
+	private double readHighRatio=0;
+	public double getReadHighRatio() {
+		return readHighRatio;
+	}
+	public void setReadHighRatio(double readHighRatio) {
+		this.readHighRatio = readHighRatio;
+	}
 	@CfgName(name="READ_PULSE")
 	private long readPulse;//读时间间隔 单位为ms 
 	

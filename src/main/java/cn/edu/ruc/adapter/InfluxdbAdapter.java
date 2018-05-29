@@ -102,14 +102,31 @@ public class InfluxdbAdapter implements DBAdapter {
 				sc.append("count(value) ");
 			}
 			break;
+		case 3://分析查询
+			sc.append("time,");
+			if(tsQuery.getAggreType()==1) {
+				sc.append("max(value) ");
+			}
+			if(tsQuery.getAggreType()==2) {
+				sc.append("min(value) ");
+			}
+			if(tsQuery.getAggreType()==3) {
+				sc.append("mean(value) ");
+			}
+			if(tsQuery.getAggreType()==4) {
+				sc.append("count(value) ");
+			}
+			break;
 		default:
 			break;
 		}
 		sc.append("from sensor where ");
-		sc.append("device_code='");
-		sc.append(tsQuery.getDeviceName());
-		sc.append("' ");
-		sc.append("and ");
+		if(tsQuery.getQueryType()!=3&&!"*".equals(tsQuery.getDeviceName())){
+			sc.append("device_code='");
+			sc.append(tsQuery.getDeviceName());
+			sc.append("' ");
+			sc.append("and ");
+		}
 		sc.append("sensor_code='");
 		sc.append(tsQuery.getSensorName());
 		sc.append("' ");
@@ -136,6 +153,9 @@ public class InfluxdbAdapter implements DBAdapter {
 			sc.append("value <=");
 			sc.append(tsQuery.getSensorGtValue());
 			sc.append(" ");
+		}
+		if(tsQuery.getQueryType()==3){
+			sc.append("group by device_code");
 		}
 		if(tsQuery.getGroupByUnit()!=null&&tsQuery.getQueryType()==2) {
 			sc.append("group by ");
