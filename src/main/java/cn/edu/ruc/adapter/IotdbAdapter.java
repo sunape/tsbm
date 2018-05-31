@@ -187,6 +187,7 @@ public class IotdbAdapter implements DBAdapter {
 			statement.clearBatch();
 		} catch (Exception e) {
 			e.printStackTrace();
+			return Status.FAILED(-1L);
 		}finally {
 			closeStatement(statement);
 			closeConnection(connection);
@@ -352,9 +353,9 @@ public class IotdbAdapter implements DBAdapter {
 	    				dataSource.setUrl(URL);  
 	    				dataSource.setPassword(PASSWD);  
 	    				dataSource.setDriverClassName(DRIVER_CLASS);  
-	    				dataSource.setInitialSize(10); 
+	    				dataSource.setInitialSize(tspc.getWriteClients()); 
 	    				dataSource.setMaxActive(65535);  
-	    				dataSource.setMaxWait(100);  
+	    				dataSource.setMaxWait(1000);  
 	    				dataSource.setTestWhileIdle(false);  
 	    				dataSource.setTestOnReturn(false);  
 	    				dataSource.setTestOnBorrow(false);  
