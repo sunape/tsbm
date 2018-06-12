@@ -14,14 +14,20 @@ tsbm不需要手动编译，运行脚本会自动编译
 ```vim conf/db.properties``` 
 修改 
 ```DB_TYPE=iotdb``` 
-```DB_IP=测试服务器IP```
-```DB_PORT=端口号``` 
+
+```DB_IP=测试服务器IP``` 
+
+```DB_PORT=端口号```  
+
 ```DB_USER=用户名``` 
+
 ```DB_PASSWD=用户密码``` 
 ### Start import
 进行别的负载测试，必须先做该步骤 
+
 ```./import.sh```
 可以通过console查看导入过程 
+
 ### Start write_test
 ```./write_test.sh``` 
 测试结束后，可在 result/result.json中查看测试结果 
