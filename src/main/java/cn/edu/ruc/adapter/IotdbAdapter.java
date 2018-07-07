@@ -321,6 +321,7 @@ public class IotdbAdapter implements DBAdapter {
 //				System.out.println(rs.getObject(1));
 //			}
 			costTime=endTime-startTime;
+			System.out.println("============"+costTime+" ns=============");
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return Status.FAILED(-1);
