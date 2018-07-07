@@ -314,15 +314,15 @@ public class IotdbAdapter implements DBAdapter {
 		try {
 			statement=conn.createStatement();
 			long startTime=System.nanoTime();
-			System.out.println(query);
+//			System.out.println(query);
 			ResultSet rs = statement.executeQuery(query.toString());
-			rs.next();
+//			rs.next();
 			long endTime=System.nanoTime();
 //			if(rs.next()){
 //				System.out.println(rs.getObject(1));
 //			}
 			costTime=endTime-startTime;
-			System.out.println("============"+costTime+" ns=============");
+//			System.out.println("============"+costTime+" ns=============");
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return Status.FAILED(-1);
