@@ -315,6 +315,7 @@ public class IotdbAdapter implements DBAdapter {
 			statement=conn.createStatement();
 			long startTime=System.nanoTime();
 			ResultSet rs = statement.executeQuery(query.toString());
+			rs.next();
 			long endTime=System.nanoTime();
 //			if(rs.next()){
 //				System.out.println(rs.getObject(1));
