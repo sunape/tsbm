@@ -11,9 +11,6 @@ import javax.xml.bind.Unmarshaller;
  * @author sxg
  */
 public class Core {
-	public static final String SYS_CONFIG_PATH="config_path";
-	public static final String SYS_BINDING_PATH="bindings_path";
-	public static final int SLEEP_TIMES=5000;
 	/**.
 	 * 初始化内置函数
 	 * functionParam

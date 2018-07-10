@@ -2,7 +2,7 @@ package cn.edu.ruc.biz;
 
 import java.util.Random;
 
-import cn.edu.ruc.TSUtils;
+import cn.edu.ruc.utils.TSUtils;
 
 public class Function {
 	private final static double[] ABNORMAL_RATE={0.005,0.01,0.1,0.15,0.2};

@@ -14,12 +14,12 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.druid.pool.DruidDataSource;
 
+import cn.edu.ruc.base.Status;
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsPackage;
 import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
-import cn.edu.ruc.db.Status;
 /**
  * iotdb 适配器
  * @author fasape
@@ -244,10 +244,23 @@ public class IotdbAdapter implements DBAdapter {
 			break;
 		}
 		sc.append("from ");
-		sc.append(ROOT_SERIES_NAME);
-		sc.append(".");
-		sc.append(tsQuery.getDeviceName());
-		sc.append(" ");
+		if(tsQuery.getQueryType()==3){
+			String template=ROOT_SERIES_NAME+".%s";
+			List<String> devices = tsQuery.getDevices();
+			for(int index=0;index<devices.size();index++){
+				sc.append(String.format(template, devices.get(index)));
+				if(index<(devices.size()-1)){
+					sc.append(",");
+				}else{
+					sc.append(" ");
+				}
+			}
+		}else{
+			sc.append(ROOT_SERIES_NAME);
+			sc.append(".");
+			sc.append(tsQuery.getDeviceName());
+			sc.append(" ");
+		}
 		if(tsQuery.getStartTimestamp()!=null) {
 			sc.append("and ");
 			sc.append("time >=");

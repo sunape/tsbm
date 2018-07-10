@@ -1,6 +1,8 @@
 package cn.edu.ruc.base;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 /**
  * 
  * @author fasape
@@ -17,6 +19,13 @@ public class TsQuery implements Serializable{
 	private Double sensorGtValue;//传感器值大于某个值
 	private Integer groupByUnit;//聚合查询 组类别 1:s 2:min 3:hour 4:day 5:month 6:year
 	private Integer aggreType;//聚合查询类型 1 max 2 min 3 avg 4 count
+	private List<String> devices=new ArrayList<String>();
+	public List<String> getDevices() {
+		return devices;
+	}
+	public void setDevices(List<String> devices) {
+		this.devices = devices;
+	}
 	public int getQueryType() {
 		return queryType;
 	}

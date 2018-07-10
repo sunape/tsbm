@@ -1,4 +1,4 @@
-package cn.edu.ruc.db;
+package cn.edu.ruc.base;
 /**
  * 请求数据库返回状态描述
  * @author sxg

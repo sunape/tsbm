@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import cn.edu.ruc.TSUtils;
+import cn.edu.ruc.utils.TSUtils;
 /**
  * 用于解析function.xml
  * @author sxg

@@ -1,4 +1,4 @@
-package cn.edu.ruc;
+package cn.edu.ruc.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;

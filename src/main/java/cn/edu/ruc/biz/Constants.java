@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import cn.edu.ruc.TSUtils;
+import cn.edu.ruc.utils.TSUtils;
 
 /**
  * 系统运行常量值

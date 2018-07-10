@@ -21,11 +21,11 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSON;
 
-import cn.edu.ruc.CoreBiz;
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsReadResult;
 import cn.edu.ruc.base.TsWriteResult;
+import cn.edu.ruc.biz.CoreBiz;
 
 /**
  * 引导类

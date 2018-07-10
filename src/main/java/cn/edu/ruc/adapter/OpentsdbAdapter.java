@@ -10,12 +10,12 @@ import java.util.concurrent.TimeUnit;
 
 import com.alibaba.fastjson.JSON;
 
+import cn.edu.ruc.base.Status;
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsPackage;
 import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
-import cn.edu.ruc.db.Status;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

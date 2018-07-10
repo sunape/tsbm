@@ -1,4 +1,4 @@
-package cn.edu.ruc;
+package cn.edu.ruc.biz;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.edu.ruc.adapter.DBAdapter;
+import cn.edu.ruc.base.Status;
 import cn.edu.ruc.base.TsDataSource;
 import cn.edu.ruc.base.TsPackage;
 import cn.edu.ruc.base.TsParamConfig;
@@ -27,11 +28,8 @@ import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsReadResult;
 import cn.edu.ruc.base.TsWrite;
 import cn.edu.ruc.base.TsWriteResult;
-import cn.edu.ruc.biz.Constants;
-import cn.edu.ruc.biz.Core;
-import cn.edu.ruc.biz.Function;
-import cn.edu.ruc.biz.FunctionParam;
-import cn.edu.ruc.db.Status;
+import cn.edu.ruc.utils.TSUtils;
+import cn.edu.ruc.utils.TimeSlot;
 
 /**
  * 核心业务类
@@ -334,10 +332,12 @@ public class CoreBiz {
 			query.setAggreType(random.nextInt(3)+1);
 			query.setGroupByUnit(2);
 			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(1));
-		}else{//所有设备同一传感器聚合  1h
+		}else{//多个设备同一传感器聚合  1h (10个)
 			query.setQueryType(3);
 			query.setAggreType(random.nextInt(3)+1);
 			query.setDeviceName("*");
+			List<String> devices=generateDeviceCodes(10,100);
+			query.setDevices(devices);
 			timeslot = TSUtils.getRandomTimeBetween(startTime, endTime, TimeUnit.HOURS.toMillis(1));
 		}
 		query.setStartTimestamp(timeslot.getStartTime());
@@ -347,8 +347,19 @@ public class CoreBiz {
 	
 	
 	
-	
-	
+	public static List<String> generateDeviceCodes(int num,int sum) {
+		Random random=new Random();
+		List<String> list = new ArrayList<String>();
+		String template="d_%s";
+		while(list.size()<num){
+			int nextInt = random.nextInt(sum);
+			String deviceCode=String.format(template,nextInt);
+			if(!list.contains(deviceCode)){
+				list.add(deviceCode);
+			}
+		}
+		return list;
+	}
 	public static Status execQuery(DBAdapter dbAdapter,TsQuery query) {
 		return dbAdapter.execQuery(dbAdapter.preQuery(query));
 	}

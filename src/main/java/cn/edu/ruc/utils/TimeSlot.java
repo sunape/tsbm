@@ -1,4 +1,4 @@
-package cn.edu.ruc;
+package cn.edu.ruc.utils;
 
 import java.io.Serializable;
 /**
