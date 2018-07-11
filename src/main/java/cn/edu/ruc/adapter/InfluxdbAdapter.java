@@ -1,6 +1,7 @@
 package cn.edu.ruc.adapter;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -126,6 +127,18 @@ public class InfluxdbAdapter implements DBAdapter {
 			sc.append(tsQuery.getDeviceName());
 			sc.append("' ");
 			sc.append("and ");
+		}
+		if(tsQuery.getQueryType()==3){
+			sc.append("(");
+			String template="device_code='%s'";
+			List<String> devices = tsQuery.getDevices();
+			for(int index=0;index<devices.size();index++){
+				sc.append(String.format(template, devices.get(index)));
+				if(index<devices.size()-1){
+					sc.append(" or ");
+				}
+			}
+			sc.append(")");
 		}
 		sc.append("sensor_code='");
 		sc.append(tsQuery.getSensorName());
