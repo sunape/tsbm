@@ -1,29 +1,14 @@
 package cn.edu.ruc.adapter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import cn.edu.ruc.base.*;
+import com.alibaba.fastjson.JSON;
+import okhttp3.*;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import com.alibaba.fastjson.JSON;
-
-import cn.edu.ruc.base.Status;
-import cn.edu.ruc.base.TsDataSource;
-import cn.edu.ruc.base.TsPackage;
-import cn.edu.ruc.base.TsParamConfig;
-import cn.edu.ruc.base.TsQuery;
-import cn.edu.ruc.base.TsWrite;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-
 public class OpentsdbAdapter implements DBAdapter {
-	private static String URL="http://%s:%s";
+	private  String URL="http://%s:%s";
 	private static String PUT_URL="/api/put";
 	private static String QUERY_URL="/api/query";
 	private static  String METRIC="wind.perform";//time.series.perform
@@ -31,9 +16,9 @@ public class OpentsdbAdapter implements DBAdapter {
 	private static String SENSOR_TAG="s";
 	MediaType MEDIA_TYPE_TEXT = MediaType.parse("text/plain");
 	private static final OkHttpClient OK_HTTP_CLIENT = new OkHttpClient().newBuilder()
-		       .readTimeout(500000, TimeUnit.MILLISECONDS)
-		       .connectTimeout(500000, TimeUnit.MILLISECONDS)
-		       .writeTimeout(500000, TimeUnit.MILLISECONDS)
+		       .readTimeout(60, TimeUnit.MINUTES)
+		       .connectTimeout(60, TimeUnit.MINUTES)
+		       .writeTimeout(60, TimeUnit.MINUTES)
 		       .build();
 	public static OkHttpClient getOkHttpClient(){
 		return OK_HTTP_CLIENT;
@@ -163,6 +148,7 @@ public class OpentsdbAdapter implements DBAdapter {
 			long startTime1=System.nanoTime();
 			response = client.newCall(request).execute();
 			int code = response.code();
+			response.body().string();
 			response.close();
 			long endTime1=System.nanoTime();
 			costTime=endTime1-startTime1;

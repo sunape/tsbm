@@ -17,7 +17,7 @@ public interface DBAdapter {
 	 * 初始化数据源和存储结构
 	 * @param dataSource 数据源连接参数
 	 */
-	public void initDataSource(TsDataSource ds,TsParamConfig tspc);
+	public void initDataSource(TsDataSource ds, TsParamConfig tspc);
 	/**
 	 * 写入预处理
 	 */

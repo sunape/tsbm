@@ -1,10 +1,13 @@
 package cn.edu.ruc.adapter;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -20,19 +23,18 @@ import cn.edu.ruc.base.TsPackage;
 import cn.edu.ruc.base.TsParamConfig;
 import cn.edu.ruc.base.TsQuery;
 import cn.edu.ruc.base.TsWrite;
-/**
- * iotdb 适配器
- * @author fasape
- *
- */
-public class IotdbAdapter implements DBAdapter {
-	private  String DRIVER_CLASS ="cn.edu.tsinghua.iotdb.jdbc.TsfileDriver";
-	private  String URL ="jdbc:tsfile://%s:%s/";
-	private  String USER ="";
-	private  String PASSWD ="";
-	private static final String ROOT_SERIES_NAME="root.perform";
+
+public class TimescaledbAdapter implements DBAdapter{
+	
+	private String DRIVER_CLASS ="org.postgresql.Driver";
+	private String URL ="jdbc:postgresql://%s:%s/tutorial";
+	//"jdbc:postgresql://localhost:5432/tutorial", "postgres", "123456"
+	private String USER ="";
+	private String PASSWD ="";
+	private final String ROOT_SERIES_NAME="testgres2";
 	private Logger logger=LoggerFactory.getLogger(getClass());
 	private TsParamConfig tspc=null;
+	
 	@Override
 	public void initDataSource(TsDataSource ds,TsParamConfig tspc) {
 		// TODO Auto-generated method stub
@@ -47,15 +49,14 @@ public class IotdbAdapter implements DBAdapter {
 		USER=ds.getUser();
 		PASSWD=ds.getPasswd();
 		//初始化数据库
-		getDataSource();
+		//getDataSource();
+		//初始化存储组
 		//初始化存储组
 		if(tspc.getTestMode().equals("write")) {
 			initTimeseriesAndStorage(tspc);
 		}
 	}
-    /**
-     * 初始化时间序列，并设置storage
-     */
+	
 	private void initTimeseriesAndStorage(TsParamConfig tspc) {
 		int deviceNum = tspc.getDeviceNum()*tspc.getWriteClients();
 		int sensorNum = tspc.getSensorNum();
@@ -66,25 +67,38 @@ public class IotdbAdapter implements DBAdapter {
 		    connection = getConnection();
 		    statement = connection.createStatement();
 		    try {
-			    	String setStorageSql="SET STORAGE GROUP TO "+ROOT_SERIES_NAME;
-			    	statement.execute(setStorageSql);
-				for(int deviceIdx=0;deviceIdx<deviceNum;deviceIdx++) {
-			    		try {
-				    			String deviceCode="d_"+deviceIdx;
-				    			for(int sensorIdx=0;sensorIdx<sensorNum;sensorIdx++) {
-				    				String sensorCode="s_"+sensorIdx;
-				    				String sql="CREATE TIMESERIES "+ROOT_SERIES_NAME+"."+deviceCode+"."+sensorCode+"  WITH DATATYPE=FLOAT, ENCODING=RLE";
-				    				statement.addBatch(sql);
-				    			}
-				    			statement.executeBatch();
-				    			statement.clearBatch();
-				    			logger.info("{} create timeseries finished[{}/{}].",deviceCode,deviceIdx+1,deviceNum);
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-			    }
+		    	
+		    	String setStorageSql="CREATE TABLE "+ROOT_SERIES_NAME+ "( timestamp        TIMESTAMPTZ       NOT NULL , device_id    TEXT              NOT NULL)";
+		    	statement.executeUpdate(setStorageSql);
+		    	logger.info("{} create table finished[{}/{}]");
+		    	
+		    	String setHypertabelSql = "SELECT create_hypertable('"+ROOT_SERIES_NAME+"','timestamp','device_id',75000)";
+		    	//"SELECT create_hypertable('conditions', 'time', 'location', 4);"
+		    	statement.execute(setHypertabelSql);
+		    	// 创建超表
+		    	// 创建表结束
+		    	
+				//for(int deviceIdx=0;deviceIdx<deviceNum;deviceIdx++) {
+			    try {
+				    	for(int sensorIdx=0;sensorIdx<sensorNum;sensorIdx++) {
+				    		String sensorCode="s_"+sensorIdx;
+				    		//ALTER TABLE conditions
+				    		//  ADD COLUMN humidity DOUBLE PRECISION NULL;
+				    		String sql="ALTER TABLE "+ROOT_SERIES_NAME + " ADD COLUMN " +sensorCode+"  DOUBLE PRECISION NULL;";
+				    		statement.addBatch(sql);
+				    	}
+				    	statement.executeBatch();
+				    	statement.clearBatch();
+				    	logger.info("{} alter table finished[{}/{}].");
+				    	//String sql2 = "INSERT INTO "+ROOT_SERIES_NAME + "(timestamp, device_id)" + " VALUES(now(),d_1);";
+				    	//statement.addBatch(sql2);
+				    	//statement.executeUpdate(sql2);
+					} catch (Exception e) {
+						e.printStackTrace();
+				}
 			} catch (Exception e) {
-				e.printStackTrace();			}
+				e.printStackTrace();			
+				}
 		  } catch (Exception e) {
 			  e.printStackTrace();
 		  } finally {
@@ -92,17 +106,23 @@ public class IotdbAdapter implements DBAdapter {
 			  closeConnection(connection);
 		  }
 	}
+	
 	private  Connection getConnection(){
 		Connection connection=null;
 		 try {
 //			connection = DriverManager.getConnection(URL, USER, PASSWD);
 			 //数据源管理
-			 connection=getDataSource().getConnection();
-		} catch (Exception e) {
+			// connection=getDataSource().getConnection();
+			 Class.forName("org.postgresql.Driver");
+	         	connection = DriverManager
+	            .getConnection("jdbc:postgresql://localhost:5432/tutorial",
+	            "postgres", "123456");
+		 } catch (Exception e) {
 			e.printStackTrace();
 		}
 		 return connection;
 	}
+	
 	private void closeConnection(Connection conn){
 		try {
 			if(conn!=null){
@@ -130,14 +150,17 @@ public class IotdbAdapter implements DBAdapter {
 			StringBuffer valueBuffer=new StringBuffer();
 			sqlBuffer.append("insert into ");
 			sqlBuffer.append(ROOT_SERIES_NAME);
-			sqlBuffer.append(".");
+			//sqlBuffer.append(".");
 			String deviceCode = pkg.getDeviceCode();
-			sqlBuffer.append(deviceCode);
+			//sqlBuffer.append("'"+deviceCode+"'");
 			sqlBuffer.append("(");
-			sqlBuffer.append("timestamp");
+			sqlBuffer.append("timestamp , device_id");
+			//INSERT INTO conditions(time, location, temperature, humidity)
 			Set<String> sensorCodes = pkg.getSensorCodes();
 			valueBuffer.append("(");
-			valueBuffer.append(pkg.getTimestamp());
+			valueBuffer.append("to_timestamp(" +pkg.getTimestamp() + ")"); // pkg.getTimestamp()  now时间改为这个时间
+			valueBuffer.append(",");
+			valueBuffer.append("'"+deviceCode+"'");
 			for(String sensorCode:sensorCodes) {
 				sqlBuffer.append(",");
 				sqlBuffer.append(sensorCode);
@@ -194,13 +217,13 @@ public class IotdbAdapter implements DBAdapter {
 		case 2://分析查询
 			sc.append("");
 			if(tsQuery.getAggreType()==1) {
-				sc.append("max_value(");
+				sc.append("max(");
 			}
 			if(tsQuery.getAggreType()==2) {
-				sc.append("min_value(");
+				sc.append("min(");
 			}
 			if(tsQuery.getAggreType()==3) {
-				sc.append("mean(");
+				sc.append("avg(");
 			}
 			if(tsQuery.getAggreType()==4) {
 				sc.append("count(");
@@ -211,13 +234,13 @@ public class IotdbAdapter implements DBAdapter {
 		case 3://分析查询
 			sc.append("");
 			if(tsQuery.getAggreType()==1) {
-				sc.append("max_value(");
+				sc.append("max(");
 			}
 			if(tsQuery.getAggreType()==2) {
-				sc.append("min_value(");
+				sc.append("min(");
 			}
 			if(tsQuery.getAggreType()==3) {
-				sc.append("mean(");
+				sc.append("avg(");
 			}
 			if(tsQuery.getAggreType()==4) {
 				sc.append("count(");
@@ -230,78 +253,77 @@ public class IotdbAdapter implements DBAdapter {
 		}
 		sc.append("from ");
 		if(tsQuery.getQueryType()==3){
-			String template=ROOT_SERIES_NAME+".%s";
+			sc.append(ROOT_SERIES_NAME+" where device_id in (");
 			List<String> devices = tsQuery.getDevices();
 			for(int index=0;index<devices.size();index++){
-				sc.append(String.format(template, devices.get(index)));
+				sc.append("'"+devices.get(index)+"'");
 				if(index<(devices.size()-1)){
 					sc.append(",");
 				}else{
 					sc.append(" ");
 				}
 			}
+			sc.append(")");
 		}else{
 			sc.append(ROOT_SERIES_NAME);
-			sc.append(".");
-			sc.append(tsQuery.getDeviceName());
-			sc.append(" ");
+			sc.append(" where device_id in (");
+			sc.append("'"+tsQuery.getDeviceName()+"'");
+			sc.append(")");
 		}
 		if(tsQuery.getStartTimestamp()!=null) {
-			sc.append("and ");
-			sc.append("time >=");
-			sc.append(tsQuery.getStartTimestamp());
+			sc.append(" and ");
+			sc.append("timestamp >=");
+			sc.append("to_timestamp(" +tsQuery.getStartTimestamp() + ")");
 			sc.append(" ");
 		}
 		if(tsQuery.getEndTimestamp()!=null) {
-			sc.append("and ");
-			sc.append("time <=");
-			sc.append(tsQuery.getEndTimestamp());
+			sc.append(" and ");
+			sc.append("timestamp <=");
+			sc.append("to_timestamp("+tsQuery.getEndTimestamp()+")");
 			sc.append(" ");
 		}
 		if(tsQuery.getSensorLtValue()!=null) {
-			sc.append("and ");
+			sc.append(" and ");
 			sc.append(tsQuery.getSensorName());
 			sc.append(">=");
 			sc.append(tsQuery.getSensorLtValue());
 			sc.append(" ");
 		}
 		if(tsQuery.getSensorGtValue()!=null) {
-			sc.append("and ");
+			sc.append(" and ");
 			sc.append(tsQuery.getSensorName());
 			sc.append("<=");
 			sc.append(tsQuery.getSensorGtValue());
 			sc.append(" ");
 		}
 		if(tsQuery.getGroupByUnit()!=null&&tsQuery.getQueryType()==2) {
-			sc.append("group by ");
+			sc.append(" group by ");
 			switch (tsQuery.getGroupByUnit()) {
 			case 1:
-				sc.append(" (1s,[");
+				sc.append(" time_bucket('1 second', timestamp) ");
 				break;
 			case 2:
-				sc.append(" (1m,[");
+				//time_bucket('5 minutes', time)
+				sc.append(" time_bucket('1 minute', timestamp)");
 				break;
 			case 3:
-				sc.append(" (1h,[");
+				sc.append(" time_bucket('1 hour', timestamp)");
 				break;
 			case 4:
-				sc.append(" (1d,[");
+				sc.append(" time_bucket('1 day', timestamp)");
 				break;
 			case 5:
-				sc.append(" (1M,[");
+				sc.append(" time_bucket('1 month', timestamp)");
 				break;
 			case 6:
-				sc.append(" (1y,[");
+				sc.append(" time_bucket('1 year', timestamp)");
 				break;
 			default:
 				break;
 			}
-			sc.append(tsQuery.getStartTimestamp());
-			sc.append(",");
-			sc.append(tsQuery.getEndTimestamp());
-			sc.append("])");
 		}
-		return sc.toString().replaceFirst("and", "where");
+		logger.info(sc.toString());
+		return sc.toString();
 	}
 
 	@Override
@@ -330,7 +352,7 @@ public class IotdbAdapter implements DBAdapter {
 		}
 		return Status.OK(costTime, 1);
 	}
-    public static void main(String[] args) {
+    public void main(String[] args) {
 		DBAdapter adapter=new IotdbAdapter();
 		TsQuery query=new TsQuery();
 		query.setQueryType(1);
@@ -342,6 +364,16 @@ public class IotdbAdapter implements DBAdapter {
 		query.setGroupByUnit(3);
 		Object preQuery = adapter.preQuery(query);
 		System.out.println(preQuery);
+		TsDataSource ds = new TsDataSource();
+		ds.setBatchCode("read");
+		ds.setDbType("timescaledb");
+		ds.setDriverClass("org.postgresql.Driver");
+		ds.setIp("localhost");
+		ds.setPasswd("123456");
+		ds.setPort("5432");
+		ds.setUser("postgres");
+		TsParamConfig tspc = new TsParamConfig();
+		initTimeseriesAndStorage(tspc);
 	}
     
     private  DruidDataSource dataSource;
